@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IAA Tickets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow work column; top bar with tabs; tickets as a list, form as a single sheet */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --line:#d9ddd6; --fg:#1d2420; --muted:#5d665f;
+  --accent:#c2620b; --accent-fg:#ffffff; --accent-soft:#fbeadb;
+  --ok:#2f7a4a; --ok-soft:#e1f0e5; --warn:#a36a00; --warn-soft:#f8ecd0; --bad:#b3322b; --bad-soft:#f7e0de; --info:#2c5d8a; --info-soft:#dfe9f3;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151916; --surface:#1d2320; --line:#323a35; --fg:#e7ebe8; --muted:#9aa49d;
+  --accent:#f0913a; --accent-fg:#1a1205; --accent-soft:#3a2716;
+  --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151916; --surface:#1d2320; --line:#323a35; --fg:#e7ebe8; --muted:#9aa49d;
+  --accent:#f0913a; --accent-fg:#1a1205; --accent-soft:#3a2716;
+  --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
+[hidden]{display:none!important}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.bar{background:var(--surface);border-bottom:1px solid var(--line)}
+header.bar .wrap{padding-block:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:.01em}
+.mark{width:28px;height:28px;border-radius:6px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font:600 12px var(--mono)}
+.who{margin-left:auto;color:var(--muted);font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+nav.tabs{display:flex;gap:4px;margin:18px 0 16px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:500 14px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+h1{font-size:22px;margin:0 0 4px;text-wrap:balance}
+h2{font-size:17px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 18px}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid .full{grid-column:1/-1}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:500;min-width:0}
+label .hint{font-weight:400;color:var(--muted);font-size:12px}
+input,select,textarea{font:15px var(--sans);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 11px;width:100%}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.types{display:flex;flex-wrap:wrap;gap:8px}
+.types button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 13px;font:500 13px var(--sans);cursor:pointer}
+.types button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:7px;padding:10px 18px;font:600 14px var(--sans);cursor:pointer}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn.ghost{background:none;color:var(--fg);border:1px solid var(--line);font-weight:500}
+.link{background:none;border:0;color:var(--accent);font:500 13px var(--sans);cursor:pointer;padding:0}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.msg{padding:10px 12px;border-radius:7px;font-size:14px;margin-top:12px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)} .msg.bad{background:var(--bad-soft);color:var(--bad)} .msg.info{background:var(--info-soft);color:var(--info)}
+.list{display:flex;flex-direction:column;gap:10px}
+.tk{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tk-top{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.no{font:500 13px var(--mono);color:var(--muted)}
+.tk-title{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.s-Open{background:var(--info-soft);color:var(--info)} .s-In{background:var(--warn-soft);color:var(--warn)}
+.s-Resolved{background:var(--ok-soft);color:var(--ok)} .s-Closed{background:var(--line);color:var(--muted)}
+.p-High,.p-Urgent{color:var(--bad)}
+.meta{font-size:13px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:6px 0 0;font-size:14px}
+dt{color:var(--muted)} dd{margin:0;min-width:0;overflow-wrap:anywhere}
+dd a{color:var(--accent)}
+.note{font-size:14px;background:var(--bg);border-radius:7px;padding:8px 10px}
+.admin-row{display:grid;grid-template-columns:160px 1fr auto;gap:8px;margin-top:6px}
+@media (max-width:560px){.admin-row{grid-template-columns:1fr}}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{width:auto}
+.empty{color:var(--muted);text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:10px}
+.auth{max-width:420px;margin:48px auto 0}
+.counts{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:12px;font-variant-numeric:tabular-nums}
+.counts b{color:var(--fg)}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap">
+  <div class="brand"><span class="mark">IAA</span><span>Ibna Al Aziz · Tickets</span></div>
+  <div class="who" id="who" hidden><span id="whoName"></span><button class="link" id="signOut">Sign out</button></div>
+</div></header>
+
+<main class="wrap">
+  <!-- Auth -->
+  <section id="authView" class="auth" hidden>
+    <div class="sheet">
+      <h1 id="authTitle">Sign in</h1>
+      <p class="sub" id="authSub">Use your work email to raise and track tickets.</p>
+      <form id="authForm" class="grid" novalidate>
+        <label class="full" id="nameWrap" hidden>Full name<input id="aName" autocomplete="name"></label>
+        <label class="full">Email<input id="aEmail" type="email" autocomplete="email" required></label>
+        <label class="full">Password<input id="aPass" type="password" autocomplete="current-password" minlength="6" required></label>
+        <div class="full row"><button class="btn" id="authBtn" type="submit">Sign in</button>
+          <button class="link" type="button" id="authSwitch">New here? Create an account</button></div>
+      </form>
+      <div id="authMsg"></div>
+    </div>
+  </section>
+
+  <!-- App -->
+  <section id="appView" hidden>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="new" aria-selected="true">New ticket</button>
+      <button role="tab" data-tab="mine" aria-selected="false">My tickets</button>
+      <button role="tab" data-tab="all" aria-selected="false" id="allTab" hidden>All tickets</button>
+    </nav>
+
+    <div id="tab-new">
+      <h1>Raise a ticket</h1>
+      <p class="sub">Ammar gets an email as soon as you submit.</p>
+      <form id="tkForm" class="sheet" novalidate>
+        <div class="grid">
+          <div class="full"><label style="margin-bottom:8px">Ticket type</label><div class="types" id="types"></div></div>
+          <div class="full grid" id="typeFields"></div>
+          <label class="full">Title <span class="hint">Leave blank and we'll write one from the details</span><input id="fTitle" maxlength="200"></label>
+          <label>Priority<select id="fPriority"><option>Low</option><option selected>Normal</option><option>High</option><option>Urgent</option></select></label>
+          <label class="full">Notes<textarea id="fDesc" placeholder="Anything else the admin should know"></textarea></label>
+        </div>
+        <div class="row" style="margin-top:16px"><button class="btn" id="submitBtn" type="submit">Submit ticket</button></div>
+        <div id="tkMsg"></div>
+      </form>
+    </div>
+
+    <div id="tab-mine" hidden>
+      <h1>My tickets</h1>
+      <p class="sub">Everything you've raised, newest first.</p>
+      <div class="list" id="mineList"></div>
+    </div>
+
+    <div id="tab-all" hidden>
+      <h1>All tickets</h1>
+      <p class="sub">Update status and leave a note for the person who raised it.</p>
+      <div class="counts" id="counts"></div>
+      <div class="filters">
+        <select id="fltStatus" aria-label="Filter by status"><option value="">All statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option></select>
+        <select id="fltType" aria-label="Filter by type"><option value="">All types</option></select>
+      </div>
+      <div class="list" id="allList"></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = "https://gqsvyxiiqxlhlxhtkwzj.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxc3Z5eGlpcXhsaGx4aHRrd3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNDA3NzMsImV4cCI6MjEwODkxNjc3M30.w1WPoD3nThNi_fwJ76qvbhzyN4OG0i6mQ9JC_kHMFsE";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const TYPES = {
+  "Geo Location": [
+    ["Employee name","text",true],["Employee ID","text",true],
+    ["Site / location name","text",true],
+    ["Google Maps link or coordinates","text",true,"Paste a Maps pin link, or lat, long e.g. 24.8607, 67.0011","full"]
+  ],
+  "Attendance Correction": [
+    ["Employee name","text",true],["Employee ID","text",true],
+    ["Date","date",true],["Correct check-in","time",false],["Correct check-out","time",false],
+    ["Reason","text",true,"","full"]
+  ],
+  "Shift / Roster Change": [
+    ["Employee name","text",true],["Employee ID","text",true],
+    ["Current shift","text",false],["New shift","text",true],["Effective from","date",true]
+  ],
+  "New Employee Setup": [
+    ["Employee name","text",true],["Employee ID","text",false],
+    ["Designation","text",true],["Department / site","text",true],["Joining date","date",true]
+  ],
+  "Other": []
+};
+let curType = "Geo Location", me = null, signUpMode = false;
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const slug = s => "f_" + s.toLowerCase().replace(/[^a-z0-9]+/g,"_");
+const msg = (el, kind, text) => { el.innerHTML = text ? `<div class="msg ${kind}">${esc(text)}</div>` : ""; };
+const fmt = d => new Date(d).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"});
+
+/* ---------- Auth ---------- */
+function setAuthMode(up){
+  signUpMode = up;
+  $("#authTitle").textContent = up ? "Create your account" : "Sign in";
+  $("#authBtn").textContent = up ? "Create account" : "Sign in";
+  $("#authSwitch").textContent = up ? "Have an account? Sign in" : "New here? Create an account";
+  $("#nameWrap").hidden = !up;
+  $("#aPass").autocomplete = up ? "new-password" : "current-password";
+  msg($("#authMsg"));
+}
+$("#authSwitch").onclick = () => setAuthMode(!signUpMode);
+$("#authForm").onsubmit = async e => {
+  e.preventDefault();
+  const email = $("#aEmail").value.trim(), password = $("#aPass").value, name = $("#aName").value.trim();
+  if (!email || password.length < 6 || (signUpMode && !name)) return msg($("#authMsg"),"bad","Fill in every field. Passwords need at least 6 characters.");
+  $("#authBtn").disabled = true;
+  try {
+    if (signUpMode) {
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
+      if (error) throw error;
+      try { localStorage.setItem("tk_pending_name", name); } catch {}
+      if (!data.session) msg($("#authMsg"),"info","Account created. Check your inbox for a confirmation link, then sign in here.");
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (err) { msg($("#authMsg"),"bad", err.message || "Couldn't sign in. Check your email and password."); }
+  $("#authBtn").disabled = false;
+};
+$("#signOut").onclick = () => sb.auth.signOut();
+
+async function onSession(session){
+  if (!session) { me = null; $("#appView").hidden = true; $("#who").hidden = true; $("#authView").hidden = false; return; }
+  let name = session.user.user_metadata?.full_name || "";
+  try { name = name || localStorage.getItem("tk_pending_name") || ""; } catch {}
+  const { data, error } = await sb.rpc("tk_join", { p_full_name: name });
+  if (error) { $("#authView").hidden = false; return msg($("#authMsg"),"bad","Signed in, but couldn't load your profile: " + error.message); }
+  me = data;
+  $("#whoName").textContent = me.full_name || me.email;
+  $("#who").hidden = false; $("#authView").hidden = true; $("#appView").hidden = false;
+  $("#allTab").hidden = !me.is_admin;
+  showTab(me.is_admin && location.hash === "#all" ? "all" : (location.hash === "#mine" ? "mine" : "new"));
+}
+sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
+
+/* ---------- Tabs ---------- */
+function showTab(t){
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  ["new","mine","all"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  if (t === "mine") loadMine();
+  if (t === "all") loadAll();
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => { history.replaceState(null,"","#"+b.dataset.tab); showTab(b.dataset.tab); });
+
+/* ---------- New ticket form ---------- */
+function renderTypes(){
+  $("#types").innerHTML = Object.keys(TYPES).map(t => `<button type="button" aria-pressed="${t===curType}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
+  $("#types").querySelectorAll("button").forEach(b => b.onclick = () => { curType = b.dataset.t; renderTypes(); });
+  $("#typeFields").innerHTML = TYPES[curType].map(([lab,type,req,hint,cls]) =>
+    `<label class="${cls||""}">${esc(lab)}${req?"":' <span class="hint">optional</span>'}${hint?`<span class="hint">${esc(hint)}</span>`:""}
+     <input id="${slug(lab)}" type="${type}" ${req?"required":""}></label>`).join("");
+  $("#typeFields").hidden = !TYPES[curType].length;
+}
+renderTypes();
+$("#fltType").innerHTML += Object.keys(TYPES).map(t => `<option>${esc(t)}</option>`).join("");
+
+$("#tkForm").onsubmit = async e => {
+  e.preventDefault();
+  const details = {}; let missing = [];
+  for (const [lab,,req] of TYPES[curType]) {
+    const v = $("#"+slug(lab)).value.trim();
+    if (req && !v) missing.push(lab);
+    if (v) details[lab] = v;
+  }
+  const desc = $("#fDesc").value.trim();
+  if (curType === "Other" && !desc && !$("#fTitle").value.trim()) missing.push("Title or notes");
+  if (missing.length) return msg($("#tkMsg"),"bad","Please fill in: " + missing.join(", "));
+  let title = $("#fTitle").value.trim();
+  if (!title) {
+    const who = details["Employee name"], where = details["Site / location name"];
+    title = [curType, where, who].filter(Boolean).join(" – ") || desc.slice(0,80) || curType;
+  }
+  $("#submitBtn").disabled = true; msg($("#tkMsg"),"info","Submitting…");
+  const { data, error } = await sb.from("tk_tickets").insert({
+    ticket_type: curType, title: title.slice(0,200), details, description: desc || null, priority: $("#fPriority").value
+  }).select().single();
+  if (error) { $("#submitBtn").disabled = false; return msg($("#tkMsg"),"bad","Couldn't submit: " + error.message); }
+  const { error: mailErr } = await sb.functions.invoke("ticket-notify", { body: { ticket_id: data.id } });
+  $("#submitBtn").disabled = false;
+  $("#tkForm").reset(); renderTypes();
+  msg($("#tkMsg"), mailErr ? "info" : "ok",
+    mailErr ? `${data.ticket_no} saved. The email alert didn't go out, but the ticket is in the admin list.`
+            : `${data.ticket_no} submitted. Ammar has been notified.`);
+};
+
+/* ---------- Lists ---------- */
+const statusCls = s => "s-" + s.split(" ")[0];
+function card(t, admin){
+  const d = Object.entries(t.details || {}).map(([k,v]) =>
+    `<dt>${esc(k)}</dt><dd>${/^https?:\/\//i.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v)}</dd>`).join("");
+  const by = admin && t.tk_members ? ` · ${esc(t.tk_members.full_name || t.tk_members.email)}` : "";
+  return `<article class="tk">
+    <div class="tk-top"><span class="no">${esc(t.ticket_no)}</span><span class="tk-title">${esc(t.title)}</span>
+      <span class="pill ${statusCls(t.status)}">${esc(t.status)}</span></div>
+    <div class="meta"><span>${esc(t.ticket_type)}</span><span class="p-${esc(t.priority)}">${esc(t.priority)} priority</span><span>${fmt(t.created_at)}${by}</span></div>
+    ${d ? `<dl>${d}</dl>` : ""}
+    ${t.description ? `<div class="note">${esc(t.description)}</div>` : ""}
+    ${!admin && t.admin_note ? `<div class="note"><b>Admin:</b> ${esc(t.admin_note)}</div>` : ""}
+    ${admin ? `<div class="admin-row">
+      <select id="st-${t.id}" aria-label="Status">${["Open","In Progress","Resolved","Closed"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}</select>
+      <input id="nt-${t.id}" placeholder="Note for the requester" value="${esc(t.admin_note||"")}">
+      <button class="btn ghost" data-save="${t.id}">Save</button></div>` : ""}
+  </article>`;
+}
+async function loadMine(){
+  $("#mineList").innerHTML = `<div class="empty">Loading…</div>`;
+  const { data, error } = await sb.from("tk_tickets").select("*").eq("created_by", me.id).order("created_at",{ascending:false});
+  if (error) return $("#mineList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+  $("#mineList").innerHTML = data.length ? data.map(t => card(t,false)).join("") : `<div class="empty">No tickets yet. Raise one from the New ticket tab.</div>`;
+}
+let allCache = [];
+async function loadAll(){
+  $("#allList").innerHTML = `<div class="empty">Loading…</div>`;
+  const { data, error } = await sb.from("tk_tickets").select("*, tk_members!tk_tickets_created_by_fkey(full_name,email)").order("created_at",{ascending:false});
+  if (error) return $("#allList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+  allCache = data; renderAll();
+}
+function renderAll(){
+  const c = s => allCache.filter(t => t.status === s).length;
+  $("#counts").innerHTML = `<span><b>${c("Open")}</b> open</span><span><b>${c("In Progress")}</b> in progress</span><span><b>${c("Resolved")}</b> resolved</span><span><b>${allCache.length}</b> total</span>`;
+  const fs = $("#fltStatus").value, ft = $("#fltType").value;
+  const rows = allCache.filter(t => (!fs || t.status === fs) && (!ft || t.ticket_type === ft));
+  $("#allList").innerHTML = rows.length ? rows.map(t => card(t,true)).join("") : `<div class="empty">No tickets match these filters.</div>`;
+  $("#allList").querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
+    const id = b.dataset.save; b.disabled = true; b.textContent = "Saving…";
+    const { error } = await sb.from("tk_tickets").update({ status: $("#st-"+id).value, admin_note: $("#nt-"+id).value.trim() || null }).eq("id", id);
+    b.disabled = false; b.textContent = error ? "Retry" : "Saved";
+    if (!error) { const t = allCache.find(x => String(x.id) === id); t.status = $("#st-"+id).value; t.admin_note = $("#nt-"+id).value.trim(); setTimeout(renderAll, 700); }
+  });
+}
+$("#fltStatus").onchange = renderAll; $("#fltType").onchange = renderAll;
+</script>
+</body>
+</html>
