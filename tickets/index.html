@@ -12,6 +12,7 @@
   --bg:#f3f4f2; --surface:#ffffff; --line:#d9ddd6; --fg:#1d2420; --muted:#5d665f;
   --accent:#c2620b; --accent-fg:#ffffff; --accent-soft:#fbeadb;
   --ok:#2f7a4a; --ok-soft:#e1f0e5; --warn:#a36a00; --warn-soft:#f8ecd0; --bad:#b3322b; --bad-soft:#f7e0de; --info:#2c5d8a; --info-soft:#dfe9f3;
+  --wa:#1a8a4a;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   color-scheme:light;
@@ -19,12 +20,12 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#151916; --surface:#1d2320; --line:#323a35; --fg:#e7ebe8; --muted:#9aa49d;
   --accent:#f0913a; --accent-fg:#1a1205; --accent-soft:#3a2716;
-  --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
+  --wa:#4cc985; --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#151916; --surface:#1d2320; --line:#323a35; --fg:#e7ebe8; --muted:#9aa49d;
   --accent:#f0913a; --accent-fg:#1a1205; --accent-soft:#3a2716;
-  --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
+  --wa:#4cc985; --ok:#74c793; --ok-soft:#1d3226; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38;
   color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -83,6 +84,20 @@ dd a{color:var(--accent)}
 .auth{max-width:420px;margin:48px auto 0}
 .counts{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:12px;font-variant-numeric:tabular-nums}
 .counts b{color:var(--fg)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:5px 12px;font:500 13px var(--sans);cursor:pointer;text-decoration:none}
+.chip:hover{border-color:var(--accent)}
+.chip.wa{color:var(--wa);border-color:color-mix(in srgb,var(--wa) 45%,var(--line))}
+.chip .count{font-variant-numeric:tabular-nums;color:var(--muted)}
+.thread{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.bubble{max-width:88%;padding:8px 11px;border-radius:10px;background:var(--bg);font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+.bubble.mine{align-self:flex-end;background:var(--accent-soft)}
+.bubble .by{display:block;font-size:12px;color:var(--muted);margin-bottom:2px;white-space:normal}
+.reply-row{display:flex;gap:8px;align-items:flex-end}
+.reply-row textarea{min-height:44px;flex:1}
+.phone-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-size:13px}
+.phone-row input{width:auto;flex:0 1 200px}
+.phone-row label{font-weight:500}
 </style>
 </head>
 <body>
@@ -99,6 +114,7 @@ dd a{color:var(--accent)}
       <p class="sub" id="authSub">Use your work email to raise and track tickets.</p>
       <form id="authForm" class="grid" novalidate>
         <label class="full" id="nameWrap" hidden>Full name<input id="aName" autocomplete="name"></label>
+        <label class="full" id="phoneWrap" hidden>WhatsApp number <span class="hint">optional · for ticket updates, e.g. 0321 1234567</span><input id="aPhone" type="tel" autocomplete="tel" inputmode="tel"></label>
         <label class="full">Email<input id="aEmail" type="email" autocomplete="email" required></label>
         <label class="full">Password<input id="aPass" type="password" autocomplete="current-password" minlength="6" required></label>
         <div class="full row"><button class="btn" id="authBtn" type="submit">Sign in</button>
@@ -118,7 +134,7 @@ dd a{color:var(--accent)}
 
     <div id="tab-new">
       <h1>Raise a ticket</h1>
-      <p class="sub">Ammar gets an email as soon as you submit.</p>
+      <p class="sub">Ammar is alerted by email and WhatsApp as soon as you submit.</p>
       <form id="tkForm" class="sheet" novalidate>
         <div class="grid">
           <div class="full"><label style="margin-bottom:8px">Ticket type</label><div class="types" id="types"></div></div>
@@ -134,13 +150,19 @@ dd a{color:var(--accent)}
 
     <div id="tab-mine" hidden>
       <h1>My tickets</h1>
-      <p class="sub">Everything you've raised, newest first.</p>
+      <p class="sub">Everything you've raised, newest first. Open a ticket's replies to talk to the admin.</p>
+      <form class="phone-row" id="phoneForm" novalidate>
+        <label for="pPhone">WhatsApp number for updates</label>
+        <input id="pPhone" type="tel" inputmode="tel" placeholder="0321 1234567">
+        <button class="btn ghost" type="submit" id="pSave">Save</button>
+        <span id="pMsg" class="hint"></span>
+      </form>
       <div class="list" id="mineList"></div>
     </div>
 
     <div id="tab-all" hidden>
       <h1>All tickets</h1>
-      <p class="sub">Update status and leave a note for the person who raised it.</p>
+      <p class="sub">Update status, reply, or message the requester on WhatsApp.</p>
       <div class="counts" id="counts"></div>
       <div class="filters">
         <select id="fltStatus" aria-label="Filter by status"><option value="">All statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option><option>Closed</option></select>
@@ -203,7 +225,7 @@ function setAuthMode(up){
   $("#authTitle").textContent = up ? "Create your account" : "Sign in";
   $("#authBtn").textContent = up ? "Create account" : "Sign in";
   $("#authSwitch").textContent = up ? "Have an account? Sign in" : "New here? Create an account";
-  $("#nameWrap").hidden = !up;
+  $("#nameWrap").hidden = !up; $("#phoneWrap").hidden = !up;
   $("#aPass").autocomplete = up ? "new-password" : "current-password";
   msg($("#authMsg"));
 }
@@ -215,9 +237,10 @@ $("#authForm").onsubmit = async e => {
   $("#authBtn").disabled = true;
   try {
     if (signUpMode) {
-      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name } } });
+      const phone = $("#aPhone").value.trim();
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name, phone } } });
       if (error) throw error;
-      try { localStorage.setItem("tk_pending_name", name); } catch {}
+      try { localStorage.setItem("tk_pending_name", name); localStorage.setItem("tk_pending_phone", phone); } catch {}
       if (!data.session) msg($("#authMsg"),"info","Account created. Check your inbox for a confirmation link, then sign in here.");
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -231,13 +254,15 @@ $("#signOut").onclick = () => sb.auth.signOut();
 async function onSession(session){
   if (!session) { me = null; $("#appView").hidden = true; $("#who").hidden = true; $("#authView").hidden = false; return; }
   let name = session.user.user_metadata?.full_name || "";
-  try { name = name || localStorage.getItem("tk_pending_name") || ""; } catch {}
-  const { data, error } = await sb.rpc("tk_join", { p_full_name: name });
+  let phone = session.user.user_metadata?.phone || "";
+  try { name = name || localStorage.getItem("tk_pending_name") || ""; phone = phone || localStorage.getItem("tk_pending_phone") || ""; } catch {}
+  const { data, error } = await sb.rpc("tk_join", { p_full_name: name, p_phone: phone || null });
   if (error) { $("#authView").hidden = false; return msg($("#authMsg"),"bad","Signed in, but couldn't load your profile: " + error.message); }
   me = data;
   $("#whoName").textContent = me.full_name || me.email;
   $("#who").hidden = false; $("#authView").hidden = true; $("#appView").hidden = false;
   $("#allTab").hidden = !me.is_admin;
+  $("#pPhone").value = me.phone ? "0" + me.phone.replace(/^92/, "") : "";
   loadEmps();
   showTab(me.is_admin && location.hash === "#all" ? "all" : (location.hash === "#mine" ? "mine" : "new"));
 }
@@ -295,21 +320,33 @@ $("#tkForm").onsubmit = async e => {
     ticket_type: curType, title: title.slice(0,200), details, description: desc || null, priority: $("#fPriority").value
   }).select().single();
   if (error) { $("#submitBtn").disabled = false; return msg($("#tkMsg"),"bad","Couldn't submit: " + error.message); }
-  const { error: mailErr } = await sb.functions.invoke("ticket-notify", { body: { ticket_id: data.id } });
+  const { error: mailErr } = await sb.functions.invoke("ticket-notify", { body: { ticket_id: data.id, event: "created" } });
   $("#submitBtn").disabled = false;
   $("#tkForm").reset(); renderTypes();
   msg($("#tkMsg"), mailErr ? "info" : "ok",
-    mailErr ? `${data.ticket_no} saved. The email alert didn't go out, but the ticket is in the admin list.`
+    mailErr ? `${data.ticket_no} saved. The alert didn't go out, but the ticket is in the admin list.`
             : `${data.ticket_no} submitted. Ammar has been notified.`);
 };
 
 /* ---------- Lists ---------- */
 const statusCls = s => "s-" + s.split(" ")[0];
+const WA_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.5 1 2.7.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.6-.3Z"/></svg>`;
+const ticketText = t => {
+  const d = Object.entries(t.details || {}).map(([k,v]) => `${k}: ${v}`).join("\n");
+  return `*${t.ticket_no}* ${t.ticket_type} (${t.status})\n${t.title}${d ? "\n" + d : ""}${t.description ? "\n" + t.description : ""}\n${location.href.split("#")[0]}`;
+};
+const waLink = (phone, text) => `https://wa.me/${phone || ""}?text=${encodeURIComponent(text)}`;
+const replyCounts = {};
+
 function card(t, admin){
   const d = Object.entries(t.details || {}).map(([k,v]) =>
     `<dt>${esc(k)}</dt><dd>${/^https?:\/\//i.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v)}</dd>`).join("");
-  const by = admin && t.tk_members ? ` · ${esc(t.tk_members.full_name || t.tk_members.email)}` : "";
-  return `<article class="tk">
+  const owner = t.tk_members;
+  const by = admin && owner ? ` · ${esc(owner.full_name || owner.email)}` : "";
+  const n = replyCounts[t.id] || 0;
+  const waOwner = admin && owner?.phone
+    ? `<a class="chip wa" target="_blank" rel="noopener" href="${esc(waLink(owner.phone, `Hi ${owner.full_name || ""}, about your ticket ${t.ticket_no} (${t.title}): `))}">${WA_ICON} WhatsApp ${esc((owner.full_name || "requester").split(" ")[0])}</a>` : "";
+  return `<article class="tk" id="tk-${t.id}">
     <div class="tk-top"><span class="no">${esc(t.ticket_no)}</span><span class="tk-title">${esc(t.title)}</span>
       <span class="pill ${statusCls(t.status)}">${esc(t.status)}</span></div>
     <div class="meta"><span>${esc(t.ticket_type)}</span><span class="p-${esc(t.priority)}">${esc(t.priority)} priority</span><span>${fmt(t.created_at)}${by}</span></div>
@@ -320,18 +357,85 @@ function card(t, admin){
       <select id="st-${t.id}" aria-label="Status">${["Open","In Progress","Resolved","Closed"].map(s=>`<option ${s===t.status?"selected":""}>${s}</option>`).join("")}</select>
       <input id="nt-${t.id}" placeholder="Note for the requester" value="${esc(t.admin_note||"")}">
       <button class="btn ghost" data-save="${t.id}">Save</button></div>` : ""}
+    <div class="actions">
+      <button class="chip" data-thread="${t.id}" aria-expanded="false">Replies <span class="count">${n}</span></button>
+      ${waOwner}
+      <a class="chip wa" target="_blank" rel="noopener" href="${esc(waLink("", ticketText(t)))}">${WA_ICON} Share on WhatsApp</a>
+    </div>
+    <div class="thread" id="th-${t.id}" hidden></div>
   </article>`;
 }
+
+async function loadCounts(ids){
+  if (!ids.length) return;
+  const { data } = await sb.from("tk_comments").select("ticket_id").in("ticket_id", ids);
+  ids.forEach(id => replyCounts[id] = 0);
+  (data || []).forEach(r => replyCounts[r.ticket_id] = (replyCounts[r.ticket_id] || 0) + 1);
+  ids.forEach(id => { const c = document.querySelector(`[data-thread="${id}"] .count`); if (c) c.textContent = replyCounts[id]; });
+}
+
+async function openThread(id){
+  const th = $("#th-"+id);
+  th.innerHTML = `<div class="hint">Loading replies…</div>`;
+  const { data, error } = await sb.from("tk_comments")
+    .select("id, body, created_at, author_id, tk_members!tk_comments_author_id_fkey(full_name,email,is_admin)")
+    .eq("ticket_id", id).order("created_at");
+  if (error) return th.innerHTML = `<div class="msg bad">${esc(error.message)}</div>`;
+  replyCounts[id] = data.length;
+  const c = document.querySelector(`[data-thread="${id}"] .count`); if (c) c.textContent = data.length;
+  th.innerHTML = (data.length ? data.map(r => {
+      const a = r.tk_members || {};
+      const who = r.author_id === me.id ? "You" : (a.full_name || a.email || "Someone") + (a.is_admin ? " (admin)" : "");
+      return `<div class="bubble ${r.author_id === me.id ? "mine" : ""}"><span class="by">${esc(who)} · ${fmt(r.created_at)}</span>${esc(r.body)}</div>`;
+    }).join("") : `<div class="hint">No replies yet.</div>`) +
+    `<form class="reply-row" data-reply="${id}" novalidate>
+       <textarea id="rb-${id}" placeholder="Write a reply" aria-label="Reply" maxlength="4000"></textarea>
+       <button class="btn" type="submit">Send</button>
+     </form><div id="rm-${id}"></div>`;
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-thread]"); if (!b) return;
+  const id = b.dataset.thread, th = $("#th-"+id), open = th.hidden;
+  th.hidden = !open; b.setAttribute("aria-expanded", open);
+  if (open) openThread(id);
+});
+document.addEventListener("submit", async e => {
+  const f = e.target.closest("[data-reply]"); if (!f) return;
+  e.preventDefault();
+  const id = f.dataset.reply, ta = $("#rb-"+id), body = ta.value.trim(), btn = f.querySelector("button");
+  if (!body) return msg($("#rm-"+id),"bad","Write something first.");
+  btn.disabled = true; btn.textContent = "Sending…";
+  const { data, error } = await sb.from("tk_comments").insert({ ticket_id: Number(id), body }).select("id").single();
+  btn.disabled = false; btn.textContent = "Send";
+  if (error) return msg($("#rm-"+id),"bad","Couldn't send: " + error.message);
+  sb.functions.invoke("ticket-notify", { body: { ticket_id: Number(id), event: "reply", comment_id: data.id } });
+  openThread(id);
+});
+
+$("#phoneForm").onsubmit = async e => {
+  e.preventDefault();
+  const raw = $("#pPhone").value.trim();
+  let p = raw.replace(/\D/g, ""); if (p.startsWith("0")) p = "92" + p.slice(1);
+  if (raw && !/^\d{10,15}$/.test(p)) return $("#pMsg").textContent = "Enter a number like 0321 1234567.";
+  $("#pSave").disabled = true;
+  const { error } = await sb.from("tk_members").update({ phone: p || null }).eq("id", me.id);
+  $("#pSave").disabled = false;
+  $("#pMsg").textContent = error ? "Couldn't save: " + error.message : (p ? "Saved. Updates will come to this number." : "Removed.");
+  if (!error) me.phone = p || null;
+};
+
 async function loadMine(){
   $("#mineList").innerHTML = `<div class="empty">Loading…</div>`;
-  const { data, error } = await sb.from("tk_tickets").select("*").eq("created_by", me.id).order("created_at",{ascending:false});
+  const { data, error } = await sb.from("tk_tickets").select("*").eq("created_by", me.id).order("updated_at",{ascending:false});
   if (error) return $("#mineList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
   $("#mineList").innerHTML = data.length ? data.map(t => card(t,false)).join("") : `<div class="empty">No tickets yet. Raise one from the New ticket tab.</div>`;
+  loadCounts(data.map(t => t.id));
 }
 let allCache = [];
 async function loadAll(){
   $("#allList").innerHTML = `<div class="empty">Loading…</div>`;
-  const { data, error } = await sb.from("tk_tickets").select("*, tk_members!tk_tickets_created_by_fkey(full_name,email)").order("created_at",{ascending:false});
+  const { data, error } = await sb.from("tk_tickets").select("*, tk_members!tk_tickets_created_by_fkey(full_name,email,phone)").order("updated_at",{ascending:false});
   if (error) return $("#allList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
   allCache = data; renderAll();
 }
@@ -341,11 +445,19 @@ function renderAll(){
   const fs = $("#fltStatus").value, ft = $("#fltType").value;
   const rows = allCache.filter(t => (!fs || t.status === fs) && (!ft || t.ticket_type === ft));
   $("#allList").innerHTML = rows.length ? rows.map(t => card(t,true)).join("") : `<div class="empty">No tickets match these filters.</div>`;
+  loadCounts(rows.map(t => t.id));
   $("#allList").querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
-    const id = b.dataset.save; b.disabled = true; b.textContent = "Saving…";
-    const { error } = await sb.from("tk_tickets").update({ status: $("#st-"+id).value, admin_note: $("#nt-"+id).value.trim() || null }).eq("id", id);
+    const id = b.dataset.save, t = allCache.find(x => String(x.id) === id);
+    const status = $("#st-"+id).value, note = $("#nt-"+id).value.trim() || null;
+    const changed = status !== t.status || note !== (t.admin_note || null);
+    b.disabled = true; b.textContent = "Saving…";
+    const { error } = await sb.from("tk_tickets").update({ status, admin_note: note }).eq("id", id);
     b.disabled = false; b.textContent = error ? "Retry" : "Saved";
-    if (!error) { const t = allCache.find(x => String(x.id) === id); t.status = $("#st-"+id).value; t.admin_note = $("#nt-"+id).value.trim(); setTimeout(renderAll, 700); }
+    if (!error) {
+      t.status = status; t.admin_note = note;
+      if (changed) sb.functions.invoke("ticket-notify", { body: { ticket_id: Number(id), event: "status" } });
+      setTimeout(renderAll, 700);
+    }
   });
 }
 $("#fltStatus").onchange = renderAll; $("#fltType").onchange = renderAll;
