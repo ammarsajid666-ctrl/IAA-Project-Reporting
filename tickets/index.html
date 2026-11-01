@@ -159,17 +159,17 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const TYPES = {
   "Geo Location": [
-    ["Employee name","text",true],["Employee ID","text",true],
+    ["Employee","emp",true,"Type a name or code, then pick from the list","full"],
     ["Site / location name","text",true],
     ["Google Maps link or coordinates","text",true,"Paste a Maps pin link, or lat, long e.g. 24.8607, 67.0011","full"]
   ],
   "Attendance Correction": [
-    ["Employee name","text",true],["Employee ID","text",true],
+    ["Employee","emp",true,"Type a name or code, then pick from the list","full"],
     ["Date","date",true],["Correct check-in","time",false],["Correct check-out","time",false],
     ["Reason","text",true,"","full"]
   ],
   "Shift / Roster Change": [
-    ["Employee name","text",true],["Employee ID","text",true],
+    ["Employee","emp",true,"Type a name or code, then pick from the list","full"],
     ["Current shift","text",false],["New shift","text",true],["Effective from","date",true]
   ],
   "New Employee Setup": [
@@ -178,7 +178,19 @@ const TYPES = {
   ],
   "Other": []
 };
-let curType = "Geo Location", me = null, signUpMode = false;
+let curType = "Geo Location", me = null, signUpMode = false, EMPS = [];
+const empLabel = e => `${e.name} · ${e.code}` + (e.designation ? ` · ${e.designation}` : "") + (e.posting ? ` · ${e.posting}` : "");
+function findEmp(v){
+  const m = String(v).toUpperCase().match(/IAA-\d{5}/);
+  if (m) return EMPS.find(e => e.code === m[0]);
+  const s = String(v).trim().toLowerCase();
+  const hits = EMPS.filter(e => e.name.toLowerCase() === s);
+  return hits.length === 1 ? hits[0] : null;
+}
+async function loadEmps(){
+  const { data } = await sb.from("tk_employees").select("code,name,designation,department,posting").eq("active", true).order("name");
+  EMPS = data || []; renderTypes();
+}
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const slug = s => "f_" + s.toLowerCase().replace(/[^a-z0-9]+/g,"_");
@@ -226,6 +238,7 @@ async function onSession(session){
   $("#whoName").textContent = me.full_name || me.email;
   $("#who").hidden = false; $("#authView").hidden = true; $("#appView").hidden = false;
   $("#allTab").hidden = !me.is_admin;
+  loadEmps();
   showTab(me.is_admin && location.hash === "#all" ? "all" : (location.hash === "#mine" ? "mine" : "new"));
 }
 sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
@@ -245,7 +258,8 @@ function renderTypes(){
   $("#types").querySelectorAll("button").forEach(b => b.onclick = () => { curType = b.dataset.t; renderTypes(); });
   $("#typeFields").innerHTML = TYPES[curType].map(([lab,type,req,hint,cls]) =>
     `<label class="${cls||""}">${esc(lab)}${req?"":' <span class="hint">optional</span>'}${hint?`<span class="hint">${esc(hint)}</span>`:""}
-     <input id="${slug(lab)}" type="${type}" ${req?"required":""}></label>`).join("");
+     ${type==="emp" ? `<input id="${slug(lab)}" list="empList" autocomplete="off" placeholder="e.g. Ahmad Aziz or IAA-10001" ${req?"required":""}>`
+                    : `<input id="${slug(lab)}" type="${type}" ${req?"required":""}>`}</label>`).join("") + `<datalist id="empList">${EMPS.map(e=>`<option value="${esc(empLabel(e))}">`).join("")}</datalist>`;
   $("#typeFields").hidden = !TYPES[curType].length;
 }
 renderTypes();
@@ -254,8 +268,17 @@ $("#fltType").innerHTML += Object.keys(TYPES).map(t => `<option>${esc(t)}</optio
 $("#tkForm").onsubmit = async e => {
   e.preventDefault();
   const details = {}; let missing = [];
-  for (const [lab,,req] of TYPES[curType]) {
+  for (const [lab,type,req] of TYPES[curType]) {
     const v = $("#"+slug(lab)).value.trim();
+    if (type === "emp") {
+      if (!v) { if (req) missing.push(lab); continue; }
+      const e = findEmp(v);
+      if (!e) return msg($("#tkMsg"),"bad","Pick the employee from the list. If they're new, raise a New Employee Setup ticket instead.");
+      details["Employee name"] = e.name; details["Employee ID"] = e.code;
+      if (e.designation) details["Designation"] = e.designation;
+      if (e.posting) details["Posting"] = e.posting;
+      continue;
+    }
     if (req && !v) missing.push(lab);
     if (v) details[lab] = v;
   }
