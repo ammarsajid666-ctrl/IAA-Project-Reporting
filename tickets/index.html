@@ -313,7 +313,7 @@ $("#tkForm").onsubmit = async e => {
   let title = $("#fTitle").value.trim();
   if (!title) {
     const who = details["Employee name"], where = details["Site / location name"];
-    title = [curType, where, who].filter(Boolean).join(" – ") || desc.slice(0,80) || curType;
+    title = [curType, where, who].filter(Boolean).join(" - ") || desc.slice(0,80) || curType;
   }
   $("#submitBtn").disabled = true; msg($("#tkMsg"),"info","Submitting…");
   const { data, error } = await sb.from("tk_tickets").insert({
