@@ -98,6 +98,16 @@ dd a{color:var(--accent)}
 .phone-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;font-size:13px}
 .phone-row input{width:auto;flex:0 1 200px}
 .phone-row label{font-weight:500}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--accent);color:var(--accent-fg);font:600 11px var(--sans);margin-left:4px;font-variant-numeric:tabular-nums}
+.person{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.person .info{flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.person .nm{font-weight:600;overflow-wrap:anywhere}
+.person .sm{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.person .btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn.small{padding:7px 14px;font-size:13px}
+.btn.danger{background:none;color:var(--bad);border:1px solid var(--line);font-weight:500}
+.s-pending{background:var(--warn-soft);color:var(--warn)} .s-approved{background:var(--ok-soft);color:var(--ok)}
+.s-rejected,.s-revoked{background:var(--bad-soft);color:var(--bad)}
 </style>
 </head>
 <body>
@@ -130,6 +140,7 @@ dd a{color:var(--accent)}
       <button role="tab" data-tab="new" aria-selected="true">New ticket</button>
       <button role="tab" data-tab="mine" aria-selected="false">My tickets</button>
       <button role="tab" data-tab="all" aria-selected="false" id="allTab" hidden>All tickets</button>
+      <button role="tab" data-tab="team" aria-selected="false" id="teamTab" hidden>Team <span class="badge" id="pendBadge" hidden></span></button>
     </nav>
 
     <div id="tab-new">
@@ -160,6 +171,15 @@ dd a{color:var(--accent)}
       <div class="list" id="mineList"></div>
     </div>
 
+    <div id="tab-team" hidden>
+      <h1>Team</h1>
+      <p class="sub">People who registered on the portal. Nobody can raise tickets until you approve them.</p>
+      <h2>Waiting for approval</h2>
+      <div class="list" id="pendList"></div>
+      <h2 style="margin-top:24px">Members</h2>
+      <div class="list" id="memberList"></div>
+    </div>
+
     <div id="tab-all" hidden>
       <h1>All tickets</h1>
       <p class="sub">Update status, reply, or message the requester on WhatsApp.</p>
@@ -169,6 +189,15 @@ dd a{color:var(--accent)}
         <select id="fltType" aria-label="Filter by type"><option value="">All types</option></select>
       </div>
       <div class="list" id="allList"></div>
+    </div>
+  </section>
+
+  <!-- Waiting for approval -->
+  <section id="waitView" class="auth" hidden>
+    <div class="sheet">
+      <h1 id="waitTitle">Waiting for approval</h1>
+      <p class="sub" id="waitText">Your request has been sent to the admin. You'll get an email once you're approved, then you can raise tickets here.</p>
+      <div class="row"><button class="btn ghost" type="button" id="waitRefresh">Check again</button></div>
     </div>
   </section>
 </main>
@@ -238,21 +267,32 @@ $("#authForm").onsubmit = async e => {
   try {
     if (signUpMode) {
       const phone = $("#aPhone").value.trim();
-      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name, phone } } });
+      const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ full_name:name, phone, app:"tickets" } } });
       if (error) throw error;
       try { localStorage.setItem("tk_pending_name", name); localStorage.setItem("tk_pending_phone", phone); } catch {}
-      if (!data.session) msg($("#authMsg"),"info","Account created. Check your inbox for a confirmation link, then sign in here.");
+      sb.functions.invoke("ticket-notify", { body: { event: "signup", email } });
+      if (!data.session) {
+        $("#authForm").reset(); setAuthMode(false);
+        msg($("#authMsg"),"ok","Request sent. The admin will review it, and you'll get an email once you're approved. Then sign in here.");
+      }
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
     }
-  } catch (err) { msg($("#authMsg"),"bad", err.message || "Couldn't sign in. Check your email and password."); }
+  } catch (err) {
+    const m = err.message || "";
+    msg($("#authMsg"),"bad",
+      /not confirmed/i.test(m) ? "Your account is waiting for admin approval. You'll get an email once it's approved."
+      : /invalid login/i.test(m) ? "That email and password don't match. Check them and try again."
+      : /already registered/i.test(m) ? "That email already has an account. Sign in instead."
+      : m || "Couldn't sign in. Check your email and password.");
+  }
   $("#authBtn").disabled = false;
 };
 $("#signOut").onclick = () => sb.auth.signOut();
 
 async function onSession(session){
-  if (!session) { me = null; $("#appView").hidden = true; $("#who").hidden = true; $("#authView").hidden = false; return; }
+  if (!session) { me = null; $("#appView").hidden = true; $("#waitView").hidden = true; $("#who").hidden = true; $("#authView").hidden = false; return; }
   let name = session.user.user_metadata?.full_name || "";
   let phone = session.user.user_metadata?.phone || "";
   try { name = name || localStorage.getItem("tk_pending_name") || ""; phone = phone || localStorage.getItem("tk_pending_phone") || ""; } catch {}
@@ -260,20 +300,82 @@ async function onSession(session){
   if (error) { $("#authView").hidden = false; return msg($("#authMsg"),"bad","Signed in, but couldn't load your profile: " + error.message); }
   me = data;
   $("#whoName").textContent = me.full_name || me.email;
-  $("#who").hidden = false; $("#authView").hidden = true; $("#appView").hidden = false;
-  $("#allTab").hidden = !me.is_admin;
+  $("#who").hidden = false; $("#authView").hidden = true;
+  if (me.status !== "approved") {
+    $("#appView").hidden = true; $("#waitView").hidden = false;
+    const blocked = me.status === "rejected" || me.status === "revoked";
+    $("#waitTitle").textContent = blocked ? "No access" : "Waiting for approval";
+    $("#waitText").textContent = blocked
+      ? "Your access to the ticket portal isn't active. Contact Ammar if you think this is a mistake."
+      : "Your request has been sent to the admin. You'll get an email once you're approved, then you can raise tickets here.";
+    return;
+  }
+  $("#waitView").hidden = true; $("#appView").hidden = false;
+  $("#allTab").hidden = !me.is_admin; $("#teamTab").hidden = !me.is_admin;
   $("#pPhone").value = me.phone ? "0" + me.phone.replace(/^92/, "") : "";
   loadEmps();
-  showTab(me.is_admin && location.hash === "#all" ? "all" : (location.hash === "#mine" ? "mine" : "new"));
+  if (me.is_admin) loadTeam(false);
+  const h = location.hash.slice(1);
+  showTab(me.is_admin && (h === "all" || h === "team") ? h : (h === "mine" ? "mine" : "new"));
 }
+$("#waitRefresh").onclick = async () => { const { data } = await sb.auth.getSession(); onSession(data.session); };
+
+/* ---------- Team (admin) ---------- */
+let teamCache = [];
+async function loadTeam(render = true){
+  if (render) $("#pendList").innerHTML = `<div class="empty">Loading…</div>`;
+  const { data, error } = await sb.rpc("tk_signups");
+  if (error) { $("#pendList").innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  teamCache = data || [];
+  const pend = teamCache.filter(p => p.status === "pending");
+  $("#pendBadge").hidden = !pend.length; $("#pendBadge").textContent = pend.length;
+  if (render) renderTeam();
+}
+const phoneTxt = p => p ? "0" + String(p).replace(/^92/, "") : "";
+function personRow(p){
+  const sub = [p.email, phoneTxt(p.phone) && "WhatsApp " + phoneTxt(p.phone), "Registered " + fmt(p.created_at)].filter(Boolean).map(esc).join(" · ");
+  const self = p.user_id === me.id;
+  let btns = "";
+  if (p.status === "pending") btns = `<button class="btn small" data-approve="${p.user_id}">Approve</button><button class="btn small danger" data-reject="${p.user_id}">Reject</button>`;
+  else if (p.status === "approved" && !self && !p.is_admin) btns = `<button class="btn small danger" data-revoke="${p.user_id}">Remove access</button>`;
+  else if (p.status === "rejected" || p.status === "revoked") btns = `<button class="btn small ghost" data-approve="${p.user_id}">Approve</button>`;
+  return `<div class="person" id="p-${p.user_id}">
+    <div class="info"><span class="nm">${esc(p.full_name || p.email)}${p.is_admin ? ' <span class="hint">· admin</span>' : ""}${self ? ' <span class="hint">· you</span>' : ""}</span><span class="sm">${sub}</span></div>
+    <span class="pill s-${esc(p.status)}">${esc(p.status[0].toUpperCase() + p.status.slice(1))}</span>
+    <div class="btns">${btns}</div></div>`;
+}
+function renderTeam(){
+  const pend = teamCache.filter(p => p.status === "pending"), rest = teamCache.filter(p => p.status !== "pending");
+  $("#pendList").innerHTML = pend.length ? pend.map(personRow).join("") : `<div class="empty">No one is waiting. New sign-ups will appear here, and you'll get an alert.</div>`;
+  $("#memberList").innerHTML = rest.length ? rest.map(personRow).join("") : `<div class="empty">No members yet.</div>`;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-approve],[data-reject],[data-revoke]"); if (!b) return;
+  const id = b.dataset.approve || b.dataset.reject || b.dataset.revoke;
+  const p = teamCache.find(x => x.user_id === id);
+  b.disabled = true; const label = b.textContent; b.textContent = "Saving…";
+  let error;
+  if (b.dataset.revoke) {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.disabled = false; b.textContent = "Click again to remove"; return; }
+    ({ error } = await sb.from("tk_members").update({ status: "revoked" }).eq("id", id));
+  } else {
+    const r = await sb.functions.invoke("ticket-notify", { body: { event: b.dataset.approve ? "approve" : "reject", user_id: id } });
+    error = r.error || (r.data && r.data.error ? { message: r.data.error } : null);
+  }
+  if (error) { b.disabled = false; b.textContent = label; return alertRow(id, "Couldn't save: " + error.message); }
+  p.status = b.dataset.approve ? "approved" : b.dataset.reject ? "rejected" : "revoked";
+  renderTeam(); loadTeam(false);
+});
+function alertRow(id, text){ const row = $("#p-"+id); if (row) row.insertAdjacentHTML("beforeend", `<div class="msg bad" style="flex-basis:100%">${esc(text)}</div>`); }
 sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
 
 /* ---------- Tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["new","mine","all"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  ["new","mine","all","team"].forEach(x => $("#tab-"+x).hidden = x !== t);
   if (t === "mine") loadMine();
   if (t === "all") loadAll();
+  if (t === "team") loadTeam(true);
 }
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => { history.replaceState(null,"","#"+b.dataset.tab); showTab(b.dataset.tab); });
 
