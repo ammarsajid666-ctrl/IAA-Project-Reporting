@@ -444,8 +444,9 @@ const TYPES = {
   "Other": [],
   "New Project": [
     ["Project name","text",true,"","full"],["Client","text",true],["Site / location","text",true],
-    ["Project manager","person",true,"Pick from the employee list"],["Start date","date",true],
-    ["Contract value (PKR)","money",false],["Project type","select:Residential|Commercial|Interior fit-out|Renovation|Infrastructure|Other",true]
+    ["Project manager","person",true,"Pick from the employee list"],["Project type","select:Residential|Commercial|Interior fit-out|Renovation|Infrastructure|Other",true],
+    ["Start date","date",true],["End date","date",true,"Planned completion"],
+    ["Contract value (PKR)","money",false]
   ],
   "Edit Transaction": [
     ["Voucher / transaction no.","text",true,"As shown in ProcessSoft"],["Transaction date","date",true],
@@ -740,6 +741,8 @@ $("#tkForm").onsubmit = async e => {
     if (type === "money") { details[lab] = "Rs " + v; continue; }
     details[lab] = v;
   }
+  if (details["Start date"] && details["End date"] && details["End date"] < details["Start date"])
+    return msg($("#tkMsg"),"bad","The end date can't be before the start date.");
   const desc = $("#fDesc").value.trim();
   if ((curType === "Other" || curType === "Accounts - Other") && !desc && !$("#fTitle").value.trim()) missing.push("Title or notes");
   if (missing.length) return msg($("#tkMsg"),"bad","Please fill in: " + missing.join(", "));
