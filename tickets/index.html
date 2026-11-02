@@ -71,7 +71,17 @@ h2{font-size:15px;margin:0 0 10px;font-weight:600}
 @media (max-width:560px){.grid{grid-template-columns:1fr}}
 label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:500;min-width:0}
 .hint{font-weight:400;color:var(--muted);font-size:12px}
-input,select,textarea{font:15px var(--sans);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 11px;width:100%}
+input,select,textarea{font:15px var(--sans);color:var(--fg);background:var(--surface);border:1px solid var(--line-strong);border-radius:7px;padding:0 12px;width:100%;height:44px;line-height:1.3}
+textarea{height:auto;padding:10px 12px;line-height:1.5}
+input[type=date],input[type=time]{min-height:44px}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field.full{grid-column:1/-1}
+.field > label{display:block;font-size:13px;font-weight:600;color:var(--fg)}
+.field .opt{font-weight:400;color:var(--muted);margin-left:4px}
+.fhint{margin:0;font-size:12px;color:var(--muted)}
+#tkForm > .grid{gap:18px 16px}
+#typeFields{gap:18px 16px;align-items:start}
 textarea{min-height:90px;resize:vertical}
 input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .types{display:flex;flex-wrap:wrap;gap:8px}
@@ -294,11 +304,11 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <p class="sub" id="newSub">Ammar is alerted as soon as you submit.</p>
       <form id="tkForm" class="sheet" novalidate>
         <div class="grid">
-          <div class="full"><label style="margin-bottom:8px">Ticket type</label><div class="types" id="types"></div><div class="hint" id="typeRule" style="margin-top:8px"></div></div>
+          <div class="field full"><span style="font-size:13px;font-weight:600">Ticket type</span><div class="types" id="types"></div><p class="fhint" id="typeRule"></p></div>
           <div class="full grid" id="typeFields"></div>
-          <label class="full">Title <span class="hint">Leave blank and we'll write one from the details</span><input id="fTitle" maxlength="200"></label>
-          <label>Priority<select id="fPriority"><option>Low</option><option selected>Normal</option><option>High</option><option>Urgent</option></select></label>
-          <label class="full">Notes<textarea id="fDesc" placeholder="Anything else the admin should know"></textarea></label>
+          <div class="field full"><label for="fTitle">Title <span class="opt">optional</span></label><input id="fTitle" maxlength="200" placeholder="We'll write one from the details if you leave this blank"></div>
+          <div class="field"><label for="fPriority">Priority</label><select id="fPriority"><option>Low</option><option selected>Normal</option><option>High</option><option>Urgent</option></select></div>
+          <div class="field full"><label for="fDesc">Notes <span class="opt">optional</span></label><textarea id="fDesc" rows="3" placeholder="Anything else the admin should know"></textarea></div>
         </div>
         <div class="row" style="margin-top:16px"><button class="btn" id="submitBtn" type="submit">Submit ticket</button></div>
         <div id="tkMsg"></div>
@@ -372,8 +382,12 @@ const TYPES = {
     ["Current shift","text",false],["New shift","text",true],["Effective from","date",true]
   ],
   "New Employee Setup": [
-    ["Employee name","text",true],["Employee ID","text",false],
-    ["Designation","text",true],["Department / site","text",true],["Joining date","date",true]
+    ["Employee name","text",true],["Father name","text",true],
+    ["CNIC number","cnic",true,"13 digits, e.g. 35202-1234567-1"],["Birth date","dob",true],
+    ["Employee ID","text",false,"Leave blank if not issued yet"],["Designation","text",true],
+    ["Office","office",true],["Department / site","text",true],
+    ["Joining date","date",true],["Line manager","person",true,"Pick from the employee list"],
+    ["Final authority","person",true,"Pick from the employee list"]
   ],
   "Other": []
 };
@@ -553,10 +567,20 @@ document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => { hi
 function renderTypes(){
   $("#types").innerHTML = Object.keys(TYPES).map(t => `<button type="button" aria-pressed="${t===curType}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
   $("#types").querySelectorAll("button").forEach(b => b.onclick = () => { curType = b.dataset.t; renderTypes(); });
-  $("#typeFields").innerHTML = TYPES[curType].map(([lab,type,req,hint,cls]) =>
-    `<label class="${cls||""}">${esc(lab)}${req?"":' <span class="hint">optional</span>'}${hint?`<span class="hint">${esc(hint)}</span>`:""}
-     ${type==="emp" ? `<input id="${slug(lab)}" list="empList" autocomplete="off" placeholder="e.g. Ahmad Aziz or IAA-10001" ${req?"required":""}>`
-                    : `<input id="${slug(lab)}" type="${type}" ${req?"required":""}>`}</label>`).join("") + `<datalist id="empList">${EMPS.filter(e => !me?.branch || empBranch(e) === me.branch).map(e=>`<option value="${esc(empLabel(e))}">`).join("")}</datalist>`;
+  const today = new Date().toISOString().slice(0,10);
+  $("#typeFields").innerHTML = TYPES[curType].map(([lab,type,req,hint,cls]) => {
+    const id = slug(lab), r = req ? "required" : "";
+    const ctl =
+      type === "emp"    ? `<input id="${id}" list="empList" autocomplete="off" placeholder="Name or code, e.g. IAA-10001" ${r}>`
+    : type === "person" ? `<input id="${id}" list="allEmpList" autocomplete="off" placeholder="Name or code" ${r}>`
+    : type === "cnic"   ? `<input id="${id}" inputmode="numeric" maxlength="15" placeholder="35202-1234567-1" data-cnic ${r}>`
+    : type === "dob"    ? `<input id="${id}" type="date" max="${today}" ${r}>`
+    : type === "office" ? `<select id="${id}" ${r}><option value="">Choose office</option>${Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${me?.branch === k ? "selected" : ""}>${v}</option>`).join("")}</select>`
+    : `<input id="${id}" type="${type}" ${r}>`;
+    return `<div class="field ${cls||""}"><label for="${id}">${esc(lab)}${req ? "" : ' <span class="opt">optional</span>'}</label>${ctl}${hint ? `<p class="fhint">${esc(hint)}</p>` : ""}</div>`;
+  }).join("") +
+    `<datalist id="empList">${EMPS.filter(e => !me?.branch || empBranch(e) === me.branch).map(e=>`<option value="${esc(empLabel(e))}">`).join("")}</datalist>` +
+    `<datalist id="allEmpList">${EMPS.map(e=>`<option value="${esc(empLabel(e))}">`).join("")}</datalist>`;
   $("#typeFields").hidden = !TYPES[curType].length;
   const b = me?.branch;
   const r = b ? ruleFor(b, curType) : null;
@@ -564,6 +588,11 @@ function renderTypes(){
   $("#typeRule").textContent = !b ? "Office is taken from the employee's posting. Approval and SLA follow that office's settings."
     : r ? `${BRANCHES[b]}. ` + (chain.length ? `Approval: ${chain.map((id,i) => `Level ${i+1} ${memberName(id)}`).join(" → ")}. Target: ${r.sla_hours} hours after final approval.` : `Target resolution: ${r.sla_hours} hours.`) : "";
 }
+document.addEventListener("input", e => {
+  if (!e.target.matches("[data-cnic]")) return;
+  const d = e.target.value.replace(/\D/g, "").slice(0, 13);
+  e.target.value = d.length > 12 ? `${d.slice(0,5)}-${d.slice(5,12)}-${d.slice(12)}` : d.length > 5 ? `${d.slice(0,5)}-${d.slice(5)}` : d;
+});
 renderTypes();
 $("#fltType").innerHTML += Object.keys(TYPES).map(t => `<option>${esc(t)}</option>`).join("");
 
@@ -581,8 +610,20 @@ $("#tkForm").onsubmit = async e => {
       if (em.posting) details["Posting"] = em.posting;
       continue;
     }
-    if (req && !v) missing.push(lab);
-    if (v) details[lab] = v;
+    if (req && !v) { missing.push(lab); continue; }
+    if (!v) continue;
+    if (type === "person") {
+      const pe = findEmp(v);
+      if (!pe) return msg($("#tkMsg"),"bad",`Pick the ${lab.toLowerCase()} from the employee list.`);
+      details[lab] = `${pe.name} (${pe.code})`; continue;
+    }
+    if (type === "cnic" && !/^\d{5}-\d{7}-\d$/.test(v)) return msg($("#tkMsg"),"bad","CNIC number must be 13 digits, like 35202-1234567-1.");
+    if (type === "dob") {
+      const age = (Date.now() - new Date(v).getTime()) / (365.25 * 864e5);
+      if (!(age >= 16 && age <= 80)) return msg($("#tkMsg"),"bad","Check the birth date; the employee should be between 16 and 80 years old.");
+    }
+    if (type === "office") { details["Posting"] = BRANCHES[v]; continue; }
+    details[lab] = v;
   }
   const desc = $("#fDesc").value.trim();
   if (curType === "Other" && !desc && !$("#fTitle").value.trim()) missing.push("Title or notes");
