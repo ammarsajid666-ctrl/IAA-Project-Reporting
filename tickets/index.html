@@ -342,7 +342,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <p class="sub" id="newSub">Ammar is alerted as soon as you submit.</p>
       <form id="tkForm" class="sheet" novalidate>
         <div class="grid">
-          <div class="field full"><span style="font-size:13px;font-weight:600">Section</span><div class="seg-ctl cat-ctl" id="catSwitch" role="group" aria-label="Section"><button type="button" data-cat="Attendance" aria-pressed="true">Attendance &amp; HR</button><button type="button" data-cat="Accounts" aria-pressed="false">Accounts</button></div><p class="fhint" id="catHint">Geo location, attendance corrections, roster changes and new employees in ResourceInn.</p></div>
+          <div class="field full"><span style="font-size:13px;font-weight:600">Section</span><div class="seg-ctl cat-ctl" id="catSwitch" role="group" aria-label="Section"><button type="button" data-cat="Attendance" aria-pressed="true">Attendance &amp; HR</button><button type="button" data-cat="Accounts" aria-pressed="false">Accounts</button></div><p class="fhint" id="catHint">Geo location, attendance corrections and new employees in ResourceInn.</p></div>
           <div class="field full"><span style="font-size:13px;font-weight:600">Ticket type</span><div class="types" id="types"></div><p class="fhint" id="typeRule"></p></div>
           <div class="full grid" id="typeFields"></div>
           <div class="field full"><label for="fTitle">Title <span class="opt">optional</span></label><input id="fTitle" maxlength="200" placeholder="We'll write one from the details if you leave this blank"></div>
@@ -453,10 +453,6 @@ const TYPES = {
     ["Date","date",true],["Correct check-in","time",false],["Correct check-out","time",false],
     ["Reason","text",true,"","full"]
   ],
-  "Shift / Roster Change": [
-    ["Employee","emp",true,"Type a name or code, then pick from the list","full"],
-    ["Current shift","text",false],["New shift","text",true],["Effective from","date",true]
-  ],
   "New Employee Setup": [
     ["Employee name","text",true],["Father name","text",true],
     ["CNIC number","cnic",true,"13 digits, e.g. 35202-1234567-1"],["Birth date","dob",true],
@@ -500,7 +496,7 @@ const TYPES = {
   "Accounts - Other": []
 };
 const CATEGORIES = {
-  Attendance: ["Geo Location","Attendance Correction","Shift / Roster Change","New Employee Setup","Other"],
+  Attendance: ["Geo Location","Attendance Correction","New Employee Setup","Other"],
   Accounts: ["New Project","Edit Transaction","Delete Transaction","New Account Head","New Material","Accounts - Other"]
 };
 const catOf = t => CATEGORIES.Accounts.includes(t) ? "Accounts" : "Attendance";
@@ -703,7 +699,7 @@ function renderTypes(){
   document.querySelectorAll("#catSwitch button").forEach(x => x.setAttribute("aria-pressed", x.dataset.cat === curCat));
   $("#catHint").textContent = curCat === "Accounts"
     ? "Changes only an accounts admin can make in ProcessSoft: new projects, editing or deleting transactions, new account heads and new materials."
-    : "Geo location, attendance corrections, roster changes and new employees in ResourceInn.";
+    : "Geo location, attendance corrections and new employees in ResourceInn.";
   $("#types").innerHTML = CATEGORIES[curCat].map(t => `<button type="button" aria-pressed="${t===curType}" data-t="${esc(t)}">${esc(typeLabel(t))}</button>`).join("");
   $("#types").querySelectorAll("button").forEach(b => b.onclick = () => { curType = b.dataset.t; renderTypes(); });
   const today = new Date().toISOString().slice(0,10);
