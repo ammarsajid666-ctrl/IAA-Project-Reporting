@@ -209,6 +209,17 @@ table.rules input[type=number]{width:90px}
 .toggle{display:inline-flex;align-items:center;gap:8px;flex-direction:row;font-weight:500;cursor:pointer}
 .toggle input{width:auto;accent-color:var(--accent);transform:scale(1.15)}
 .section-gap{margin-top:28px}
+.files{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.files:empty{display:none}
+a.file{display:inline-flex;align-items:center;gap:8px;max-width:260px;border:1px solid var(--line);border-radius:8px;padding:5px 10px 5px 6px;font-size:13px;color:var(--fg);text-decoration:none;background:var(--raised)}
+a.file:hover{border-color:var(--accent)}
+a.file img{width:28px;height:28px;object-fit:cover;border-radius:5px;flex:none}
+a.file svg{flex:none;margin-left:4px;color:var(--muted)}
+a.file span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+a.file small{color:var(--muted);flex:none}
+label.chip.addfile{cursor:pointer;flex-direction:row;font-weight:500;font-size:13px}
+.muted{color:var(--muted)}
+input.filein{height:auto;padding:8px;background:var(--raised)}
 .cat-ctl{align-self:flex-start}
 .cat-ctl button{padding:9px 16px;font-size:14px}
 table.rules tr.grp td{background:var(--raised);font:600 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 14px}
@@ -265,6 +276,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <button role="tab" data-tab="appr" id="apprTab" hidden>Approvals <span class="badge" id="apprBadge" hidden></span></button>
       <button role="tab" data-tab="team" id="teamTab" hidden>Team <span class="badge" id="pendBadge" hidden></span></button>
       <button role="tab" data-tab="settings" id="setTab" hidden>Settings</button>
+      <button role="tab" data-tab="assigned" id="asgTab" hidden>Assigned to me <span class="badge" id="asgBadge" hidden></span></button>
       <button role="tab" data-tab="profile" id="profTab">Profile</button>
     </nav>
   </div>
@@ -334,6 +346,8 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
           <div class="field full"><span style="font-size:13px;font-weight:600">Ticket type</span><div class="types" id="types"></div><p class="fhint" id="typeRule"></p></div>
           <div class="full grid" id="typeFields"></div>
           <div class="field full"><label for="fTitle">Title <span class="opt">optional</span></label><input id="fTitle" maxlength="200" placeholder="We'll write one from the details if you leave this blank"></div>
+          <div class="field full" id="asgWrap" hidden><label for="fAssign">Assign to <span class="opt">optional</span></label><select id="fAssign"><option value="">Nobody yet (service desk)</option></select><p class="fhint">They get an alert and see it under "Assigned to me".</p></div>
+          <div class="field full"><label for="fFiles">Attachments <span class="opt">optional</span></label><input id="fFiles" type="file" multiple class="filein" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"><p class="fhint">Up to 5 files, 10 MB each: photos, PDFs, Word or Excel.</p></div>
           <div class="field"><label for="fPriority">Priority</label><select id="fPriority"><option>Low</option><option selected>Normal</option><option>High</option><option>Urgent</option></select></div>
           <div class="field full"><label for="fDesc">Notes <span class="opt">optional</span></label><textarea id="fDesc" rows="3" placeholder="Anything else the admin should know"></textarea></div>
         </div>
@@ -373,6 +387,15 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <div class="list" id="pendList"></div>
       <h2 class="section-gap">Members</h2>
       <div class="list" id="memberList"></div>
+    </div>
+
+    <!-- Assigned to me -->
+    <div id="tab-assigned" class="narrow" hidden>
+      <h1>Assigned to me</h1>
+      <p class="sub">Tickets you're responsible for. Update the status as you work; the requester and the service desk are kept informed.</p>
+      <div class="list" id="asgList"></div>
+      <h2 class="section-gap">Done</h2>
+      <div class="list" id="asgDone"></div>
     </div>
 
     <!-- Profile -->
@@ -615,10 +638,11 @@ async function onSession(session){
   ["#dashTab","#teamTab","#setTab"].forEach(s => $(s).hidden = !me.is_admin);
   $("#pPhone").value = me.phone ? "0" + me.phone.replace(/^92/, "") : "";
   await Promise.all([loadEmps(), loadRules(), loadMembers()]);
+  fillAssign();
   refreshApprBadge();
   if (me.is_admin) loadTeam(false);
   const h = location.hash.slice(1);
-  const allowed = ["new","mine","appr","profile"].concat(me.is_admin ? ["dash","team","settings"] : []);
+  const allowed = ["new","mine","appr","assigned","profile"].concat(me.is_admin ? ["dash","team","settings"] : []);
   showTab(allowed.includes(h) ? h : (me.is_admin ? "dash" : "new"));
 }
 sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
@@ -645,7 +669,14 @@ async function loadMembers(){
   const { data } = await sb.from("tk_members").select("id,full_name,email,is_admin,status,avatar_url,branch").eq("status","approved").order("full_name");
   MEMBERS = data || [];
 }
+async function refreshAsgBadge(){
+  const { count } = await sb.from("tk_tickets").select("id", { count:"exact", head:true }).eq("assignee_id", me.id).in("status", ["Open","In Progress","On Hold"]);
+  const { count: any } = await sb.from("tk_tickets").select("id", { count:"exact", head:true }).eq("assignee_id", me.id);
+  $("#asgTab").hidden = !(any > 0);
+  $("#asgBadge").hidden = !count; $("#asgBadge").textContent = count || "";
+}
 async function refreshApprBadge(){
+  refreshAsgBadge();
   const { count } = await sb.from("tk_ticket_approvals").select("id", { count:"exact", head:true }).eq("approver_id", me.id).eq("status","pending");
   const { count: any } = await sb.from("tk_ticket_approvals").select("id", { count:"exact", head:true }).eq("approver_id", me.id);
   const isApprover = Object.values(RULES).some(r => (r.approver_chain || []).includes(me.id));
@@ -656,8 +687,9 @@ async function refreshApprBadge(){
 /* ---------- Tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["dash","new","mine","appr","team","settings","profile"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  ["dash","new","mine","appr","team","settings","profile","assigned"].forEach(x => $("#tab-"+x).hidden = x !== t);
   if (t === "profile") renderProfile();
+  if (t === "assigned") loadAssigned();
   if (t === "dash") loadAll();
   if (t === "mine") loadMine();
   if (t === "appr") loadAppr();
@@ -761,15 +793,74 @@ $("#tkForm").onsubmit = async e => {
     ticket_type: curType, title: title.slice(0,200), details, description: desc || null, priority: $("#fPriority").value
   }).select().single();
   if (error) { $("#submitBtn").disabled = false; return msg($("#tkMsg"),"bad","Couldn't submit: " + error.message); }
+  const files = [...$("#fFiles").files];
+  let fileNote = "";
+  if (files.length) { msg($("#tkMsg"),"info","Uploading attachments…"); const r = await uploadFiles(data.id, files); fileNote = r.failed ? ` ${r.failed} attachment(s) didn't upload: ${r.reason}` : ` ${r.done} attachment(s) added.`; }
+  const asg = me.is_admin ? $("#fAssign").value : "";
+  if (asg) {
+    const { error: aErr } = await sb.from("tk_tickets").update({ assignee_id: asg }).eq("id", data.id);
+    if (!aErr) { sb.functions.invoke("ticket-notify", { body: { ticket_id: data.id, event: "assigned" } }); fileNote += ` Assigned to ${memberName(asg)}.`; }
+  }
   const { error: mailErr } = await sb.functions.invoke("ticket-notify", { body: { ticket_id: data.id, event: "created" } });
   $("#submitBtn").disabled = false;
-  $("#tkForm").reset(); renderTypes();
+  $("#tkForm").reset(); renderTypes(); fillAssign();
   const pend = data.status === "Pending Approval";
   msg($("#tkMsg"), mailErr ? "info" : "ok",
     pend ? `${data.ticket_no} submitted. It's waiting for approval from ${memberName(data.approver_id)} (level 1); the SLA clock starts after the final approval.`
     : mailErr ? `${data.ticket_no} saved. The alert didn't go out, but the ticket is in the admin list.`
-    : `${data.ticket_no} submitted. Ammar has been notified. Target: ${dur((data.sla_hours||24)*H)}.`);
+    : `${data.ticket_no} submitted. Ammar has been notified. Target: ${dur((data.sla_hours||24)*H)}.`) ;
+  if (fileNote) $("#tkMsg").firstChild && ($("#tkMsg").firstChild.textContent += fileNote);
 };
+
+function fillAssign(){
+  $("#asgWrap").hidden = !me?.is_admin;
+  if (!me?.is_admin) return;
+  $("#fAssign").innerHTML = `<option value="">Nobody yet (service desk)</option>` + MEMBERS.map(m => `<option value="${m.id}">${esc(m.full_name || m.email)}${m.branch ? " · " + m.branch : ""}</option>`).join("");
+}
+const FILES = {};
+const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b/1024)) + " KB";
+async function uploadFiles(ticketId, files){
+  let done = 0, failed = 0, reason = "";
+  for (const f of files.slice(0, 5)) {
+    if (f.size > 10485760) { failed++; reason = `${f.name} is over 10 MB`; continue; }
+    const safe = f.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+    const path = `${ticketId}/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${safe}`;
+    const { error } = await sb.storage.from("tk-files").upload(path, f, { contentType: f.type || "application/octet-stream" });
+    if (error) { failed++; reason = error.message; continue; }
+    const { error: e2 } = await sb.from("tk_attachments").insert({ ticket_id: ticketId, path, file_name: f.name.slice(0,200), size_bytes: f.size, mime: f.type || null });
+    if (e2) { failed++; reason = e2.message; sb.storage.from("tk-files").remove([path]); continue; }
+    done++;
+  }
+  if (files.length > 5) { failed += files.length - 5; reason = "only 5 files can be added at a time"; }
+  return { done, failed, reason };
+}
+async function loadFiles(ids){
+  if (!ids.length) return;
+  const { data } = await sb.from("tk_attachments").select("id,ticket_id,path,file_name,size_bytes,mime,uploaded_by,created_at").in("ticket_id", ids).order("created_at");
+  ids.forEach(id => FILES[id] = []);
+  const rows = data || [];
+  if (rows.length) {
+    const { data: urls } = await sb.storage.from("tk-files").createSignedUrls(rows.map(r => r.path), 3600);
+    const map = Object.fromEntries((urls || []).map(u => [u.path, u.signedUrl]));
+    rows.forEach(r => { r.url = map[r.path]; FILES[r.ticket_id].push(r); });
+  }
+  ids.forEach(id => { const box = $("#fl-"+id); if (box) box.innerHTML = filesHtml(id); });
+}
+const FILE_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21.4 11.6 12.2 20.8a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>`;
+function filesHtml(id){
+  const fs = FILES[id] || [];
+  return fs.map(f => `<a class="file" href="${esc(f.url || "#")}" target="_blank" rel="noopener" title="${esc(f.file_name)}">${/^image\//.test(f.mime || "") && f.url ? `<img src="${esc(f.url)}" alt="">` : FILE_ICON}<span>${esc(f.file_name)}</span><small>${fmtSize(f.size_bytes)}</small></a>`).join("");
+}
+document.addEventListener("change", async e => {
+  const inp = e.target.closest("[data-addfiles]"); if (!inp) return;
+  const id = Number(inp.dataset.addfiles), files = [...inp.files]; inp.value = "";
+  if (!files.length) return;
+  const box = $("#fl-"+id); box.insertAdjacentHTML("beforeend", `<span class="hint">Uploading…</span>`);
+  const r = await uploadFiles(id, files);
+  await loadFiles([id]);
+  if (r.failed) box.insertAdjacentHTML("beforeend", `<span class="hint" style="color:var(--bad)">${esc(r.failed + " didn't upload: " + r.reason)}</span>`);
+  if (r.done) sb.from("tk_comments").insert({ ticket_id: id, body: `📎 Added ${r.done} attachment${r.done > 1 ? "s" : ""}: ${files.slice(0,5).filter(f => f.size <= 10485760).map(f => f.name).join(", ")}` }).then(() => {});
+});
 
 /* ---------- Ticket cards ---------- */
 const statusCls = s => "s-" + s.split(" ")[0];
@@ -814,6 +905,9 @@ function card(t, mode){ // mode: admin | mine | appr
     `<dt>${esc(k)}</dt><dd>${/^https?:\/\//i.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v)}</dd>`).join("");
   const owner = t.owner;
   const by = (mode !== "mine") && owner ? `<span class="byline">${avatar(owner,"sm")}Raised by ${esc(owner.full_name || owner.email)}</span>` : "";
+  const asgP = t.assignee_id ? (t.assignee || memberById(t.assignee_id)) : null;
+  const asgLine = t.assignee_id ? `<span class="byline">${avatar(asgP,"sm")}${t.assignee_id === me.id ? "Assigned to you" : "Assigned to " + esc(memberName(t.assignee_id))}</span>` : (admin ? `<span class="muted">Unassigned</span>` : "");
+  const isAssignee = mode === "assigned" && t.assignee_id === me.id;
   const s = slaInfo(t);
   const n = replyCounts[t.id] || 0;
   const waOwner = admin && owner?.phone
@@ -825,12 +919,16 @@ function card(t, mode){ // mode: admin | mine | appr
     <div class="tk-top"><span class="no">${esc(t.ticket_no)}</span>${brTag(t.branch)}<span class="tk-title">${esc(t.title)}</span>
       <span class="sla ${s.cls}" data-sla="${t.id}">${esc(s.text)}</span>
       <span class="pill ${statusCls(t.status)}">${esc(t.status)}</span></div>
-    <div class="meta"><span><b>${esc(catOf(t.ticket_type))}</b> · ${esc(typeLabel(t.ticket_type))}</span><span class="p-${esc(t.priority)}">${esc(t.priority)} priority</span><span>${fmt(t.created_at)}</span>${by}<span>SLA ${t.sla_hours || 24}h</span>${admin && t.admin_note ? `<span>Note: ${esc(t.admin_note)}</span>` : ""}</div>
+    <div class="meta"><span><b>${esc(catOf(t.ticket_type))}</b> · ${esc(typeLabel(t.ticket_type))}</span><span class="p-${esc(t.priority)}">${esc(t.priority)} priority</span><span>${fmt(t.created_at)}</span>${by}<span>SLA ${t.sla_hours || 24}h</span>${asgLine}${admin && t.admin_note ? `<span>Note: ${esc(t.admin_note)}</span>` : ""}</div>
     ${approvalLine(t)}
     ${admin ? `<details class="more"><summary>Details and actions ▾</summary><div style="display:flex;flex-direction:column;gap:8px">` : ""}
     ${d ? `<dl>${d}</dl>` : ""}
     ${t.description ? `<div class="note">${esc(t.description)}</div>` : ""}
-    ${mode !== "admin" && t.admin_note ? `<div class="note"><b>Admin:</b> ${esc(t.admin_note)}</div>` : ""}
+    ${mode !== "admin" && t.admin_note ? `<div class="note"><b>Note:</b> ${esc(t.admin_note)}</div>` : ""}
+    ${isAssignee && ["Open","In Progress","On Hold","Resolved"].includes(t.status) ? `<div class="admin-row">
+      <select id="st-${t.id}" aria-label="Status">${["Open","In Progress","On Hold","Resolved"].map(x=>`<option ${x===t.status?"selected":""}>${x}</option>`).join("")}</select>
+      <input id="nt-${t.id}" placeholder="Note for the requester" value="${esc(t.admin_note||"")}">
+      <button class="btn ghost small" data-save="${t.id}">Save</button></div>` : ""}
     ${mode === "appr" && t.status === "Pending Approval" && (STEPS[t.id] || []).some(s => s.status === "pending" && s.approver_id === me.id) ? `
       <label>Comment for the requester <span class="hint">optional</span><textarea id="an-${t.id}" style="min-height:60px"></textarea></label>
       <div class="row"><button class="btn small" data-decide="${t.id}" data-ok="1">Approve</button><button class="btn small danger" data-decide="${t.id}" data-ok="0">Reject</button></div><div id="am-${t.id}"></div>` : ""}
@@ -838,14 +936,17 @@ function card(t, mode){ // mode: admin | mine | appr
       <select id="st-${t.id}" aria-label="Status">${STATUSES.filter(x => x !== "Pending Approval" || t.status === "Pending Approval").map(x=>`<option ${x===t.status?"selected":""}>${x}</option>`).join("")}</select>
       <input id="nt-${t.id}" placeholder="Note for the requester" value="${esc(t.admin_note||"")}">
       <button class="btn ghost small" data-save="${t.id}">Save</button></div>
+      ${!DONE.includes(t.status) ? `<div class="send-row"><select id="as-${t.id}" aria-label="Assign to"><option value="">Unassigned</option>${MEMBERS.map(m => `<option value="${m.id}" ${m.id === t.assignee_id ? "selected" : ""}>${esc(m.full_name || m.email)}${m.branch ? " · " + m.branch : ""}</option>`).join("")}</select><button class="btn ghost small" data-assign="${t.id}">Assign</button></div>` : ""}
       ${canSend && approverOpts ? `<details class="more"><summary>Send for approval…</summary>
         ${chainPicker("t"+t.id, ruleFor(t.branch || "Lahore", t.ticket_type)?.approver_chain || [], t.created_by)}
         <div class="row" style="margin-top:8px"><button class="btn ghost small" data-sendappr="${t.id}">Send for approval</button><span class="hint">Goes level by level; the SLA clock pauses until the last level approves.</span></div><div id="sm-${t.id}"></div></details>` : ""}
       </div></details>` : ""}
+    <div class="files" id="fl-${t.id}">${filesHtml(t.id)}</div>
     <div class="editbox" id="ed-${t.id}" hidden></div>
     <div class="actions">
       ${(admin || (t.created_by === me.id && ["Pending Approval","Open"].includes(t.status))) ? `<button class="chip" data-edit="${t.id}">Edit</button>` : ""}
       <button class="chip" data-thread="${t.id}" aria-expanded="false">Replies <span class="count">${n}</span></button>
+      <label class="chip addfile">${FILE_ICON} Attach<input type="file" multiple class="vh" data-addfiles="${t.id}" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"></label>
       ${waOwner}
       <a class="chip wa" target="_blank" rel="noopener" href="${esc(waLink("", ticketText(t)))}">${WA_ICON} Share</a>
     </div>
@@ -946,6 +1047,18 @@ document.addEventListener("click", async e => {
   }
 });
 
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-assign]"); if (!b) return;
+  const id = Number(b.dataset.assign), who = $("#as-"+id).value || null, t = TICKETS.get(id);
+  if ((t.assignee_id || null) === who) return;
+  b.disabled = true; b.textContent = "Saving…";
+  const { data, error } = await sb.from("tk_tickets").update({ assignee_id: who }).eq("id", id).select(OWNER_SEL).single();
+  b.disabled = false; b.textContent = error ? "Retry" : who ? "Assigned" : "Unassigned";
+  if (error) return;
+  Object.assign(t, data);
+  if (who) sb.functions.invoke("ticket-notify", { body: { ticket_id: id, event: "assigned" } });
+  setTimeout(renderAll, 600);
+});
 async function saveStatus(b){
   const id = b.dataset.save, t = TICKETS.get(Number(id));
   const status = $("#st-"+id).value, note = $("#nt-"+id).value.trim() || null;
@@ -956,7 +1069,7 @@ async function saveStatus(b){
   if (error) return;
   Object.assign(t, data);
   if (changed) sb.functions.invoke("ticket-notify", { body: { ticket_id: Number(id), event: "status" } });
-  setTimeout(renderAll, 600);
+  setTimeout(() => $("#tab-assigned").hidden ? renderAll() : loadAssigned(), 600);
 }
 async function sendForApproval(b){
   const id = Number(b.dataset.sendappr), chain = readChain("t"+id);
@@ -1043,15 +1156,27 @@ $("#phoneForm").onsubmit = async e => {
   if (!error) me.phone = p || null;
 };
 
-const OWNER_SEL = "*, owner:tk_members!tk_tickets_created_by_fkey(full_name,email,phone,avatar_url)";
+const OWNER_SEL = "*, owner:tk_members!tk_tickets_created_by_fkey(full_name,email,phone,avatar_url), assignee:tk_members!tk_tickets_assignee_id_fkey(full_name,email,avatar_url)";
+async function loadAssigned(){
+  $("#asgList").innerHTML = `<div class="empty">Loading…</div>`;
+  const { data, error } = await sb.from("tk_tickets").select(OWNER_SEL).eq("assignee_id", me.id).order("updated_at",{ascending:false}).limit(200);
+  if (error) return $("#asgList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+  const ids = data.map(t => t.id);
+  await loadSteps(ids);
+  const open = data.filter(t => !DONE.includes(t.status)).sort((a,b) => (slaInfo(a).left ?? 9e15) - (slaInfo(b).left ?? 9e15));
+  const done = data.filter(t => DONE.includes(t.status)).slice(0, 20);
+  $("#asgList").innerHTML = open.length ? open.map(t => card(t,"assigned")).join("") : `<div class="empty">Nothing assigned to you right now.</div>`;
+  $("#asgDone").innerHTML = done.length ? done.map(t => card(t,"assigned")).join("") : `<div class="empty">Nothing finished yet.</div>`;
+  loadCounts(ids); loadFiles(ids); refreshAsgBadge();
+}
 
 async function loadMine(){
   $("#mineList").innerHTML = `<div class="empty">Loading…</div>`;
-  const { data, error } = await sb.from("tk_tickets").select("*").eq("created_by", me.id).order("updated_at",{ascending:false});
+  const { data, error } = await sb.from("tk_tickets").select(OWNER_SEL).eq("created_by", me.id).order("updated_at",{ascending:false});
   if (error) return $("#mineList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
   await loadSteps(data.map(t => t.id));
   $("#mineList").innerHTML = data.length ? data.map(t => card(t,"mine")).join("") : `<div class="empty">No tickets yet. Raise one from the New ticket tab.</div>`;
-  loadCounts(data.map(t => t.id));
+  loadCounts(data.map(t => t.id)); loadFiles(data.map(t => t.id));
 }
 
 async function loadAppr(){
@@ -1066,7 +1191,7 @@ async function loadAppr(){
   const doneIds = [...new Set(mine.filter(s => s.status === "approved" || s.status === "rejected").map(s => s.ticket_id))].filter(id => !waitIds.includes(id)).slice(0, 20);
   $("#apprList").innerHTML = waitIds.length ? waitIds.map(id => byId[id] && card(byId[id],"appr")).join("") : `<div class="empty">Nothing is waiting for your approval.</div>`;
   $("#apprDone").innerHTML = doneIds.length ? doneIds.map(id => byId[id] && card(byId[id],"appr")).join("") : `<div class="empty">No decisions yet.</div>`;
-  loadCounts(ids);
+  loadCounts(ids); loadFiles(ids);
 }
 
 /* ---------- Dashboard ---------- */
@@ -1166,7 +1291,7 @@ function renderAll(){
   const rank = t => { const s = sl(t); return ACTIVE.includes(t.status) ? (s.left ?? 9e15) : 1e16 - new Date(t.updated_at).getTime() / 1e3; };
   rows.sort((a,b) => rank(a) - rank(b));
   $("#allList").innerHTML = rows.length ? rows.map(t => card(t,"admin")).join("") : `<div class="empty">${scoped.length ? "No tickets match these filters." : "No tickets yet. They'll appear here as your team raises them."}</div>`;
-  loadCounts(rows.map(t => t.id));
+  loadCounts(rows.map(t => t.id)); loadFiles(rows.map(t => t.id));
 }
 ["#fltStatus","#fltType","#dashRange"].forEach(s => $(s).onchange = renderAll);
 $("#fltText").oninput = () => { clearTimeout(window._qt); window._qt = setTimeout(renderAll, 200); };
