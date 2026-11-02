@@ -10,10 +10,10 @@
 /* Layout: dark masthead band with brand + tabs; wide work area. Dashboard = KPI strip, three chart panels, then an SLA-sorted queue. */
 :root{
   --bg:#f2f3f1; --surface:#ffffff; --raised:#f7f8f6; --line:#dcdfd9; --line-strong:#c6cbc3; --fg:#1b211e; --muted:#5b645e; --faint:#8a928c;
-  --mast:#18201c; --mast-fg:#eef1ee; --mast-muted:#9aa59e; --mast-line:#2c3631;
-  --accent:#c2620b; --accent-fg:#ffffff; --accent-soft:#fbeadb;
+  --mast:#1d1916; --mast-fg:#eef1ee; --mast-muted:#9aa59e; --mast-line:#2c3631;
+  --accent:#8a6a4f; --accent-fg:#ffffff; --accent-soft:#f1e9e1;
   --ok:#2f7a4a; --ok-soft:#e1f0e5; --warn:#9c6500; --warn-soft:#f8ecd0; --bad:#b3322b; --bad-soft:#f7e0de; --info:#2c5d8a; --info-soft:#dfe9f3; --hold:#6b5b95; --hold-soft:#ece8f4;
-  --bar:#c2620b; --grid:#e6e8e4;
+  --bar:#8a6a4f; --grid:#e6e8e4;
   --wa:#1a8a4a;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
@@ -22,17 +22,17 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121614; --surface:#1a201d; --raised:#202724; --line:#2d3531; --line-strong:#3b4540; --fg:#e8ece9; --muted:#9ba59f; --faint:#6f7a74;
-  --mast:#0c0f0e; --mast-fg:#eef1ee; --mast-muted:#8d9891; --mast-line:#232b27;
-  --accent:#ef9443; --accent-fg:#1a1205; --accent-soft:#3a2716;
+  --mast:#0f0d0b; --mast-fg:#eef1ee; --mast-muted:#8d9891; --mast-line:#232b27;
+  --accent:#cdb196; --accent-fg:#1c1610; --accent-soft:#33291f;
   --ok:#74c793; --ok-soft:#1b3024; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38; --hold:#b4a6e0; --hold-soft:#2a2638;
-  --bar:#ef9443; --grid:#262e2a; --wa:#4cc985;
+  --bar:#cdb196; --grid:#262e2a; --wa:#4cc985;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#121614; --surface:#1a201d; --raised:#202724; --line:#2d3531; --line-strong:#3b4540; --fg:#e8ece9; --muted:#9ba59f; --faint:#6f7a74;
-  --mast:#0c0f0e; --mast-fg:#eef1ee; --mast-muted:#8d9891; --mast-line:#232b27;
-  --accent:#ef9443; --accent-fg:#1a1205; --accent-soft:#3a2716;
+  --mast:#0f0d0b; --mast-fg:#eef1ee; --mast-muted:#8d9891; --mast-line:#232b27;
+  --accent:#cdb196; --accent-fg:#1c1610; --accent-soft:#33291f;
   --ok:#74c793; --ok-soft:#1b3024; --warn:#e4b04c; --warn-soft:#352b14; --bad:#f08a82; --bad-soft:#3b1f1d; --info:#8cb8e3; --info-soft:#1c2a38; --hold:#b4a6e0; --hold-soft:#2a2638;
-  --bar:#ef9443; --grid:#262e2a; --wa:#4cc985;
+  --bar:#cdb196; --grid:#262e2a; --wa:#4cc985;
   color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -209,6 +209,23 @@ table.rules input[type=number]{width:90px}
 .toggle{display:inline-flex;align-items:center;gap:8px;flex-direction:row;font-weight:500;cursor:pointer}
 .toggle input{width:auto;accent-color:var(--accent);transform:scale(1.15)}
 .section-gap{margin-top:28px}
+.brandmark{height:40px;width:auto;display:block}
+.authlogo{display:block;margin:0 auto 22px;height:auto;max-width:180px}
+.lg-dark{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lg-light{display:none}:root:not([data-theme="light"]) .lg-dark{display:block}}
+:root[data-theme="dark"] .lg-light{display:none} :root[data-theme="dark"] .lg-dark{display:block}
+.me-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:0;color:var(--mast-fg);font:500 13px var(--sans);cursor:pointer;padding:2px}
+.avatar{--s:28px;width:var(--s);height:var(--s);border-radius:50%;flex:none;display:inline-grid;place-items:center;overflow:hidden;background:var(--accent-soft);color:var(--accent);font:600 calc(var(--s)*.4) var(--sans);letter-spacing:.02em;vertical-align:middle}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar.sm{--s:22px} .avatar.md{--s:36px} .avatar.xl{--s:112px}
+.who .avatar{background:var(--mast-line);color:var(--mast-fg)}
+.profile{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.pf-body{flex:1 1 260px;min-width:0}
+.pf-name{font-size:20px;font-weight:600}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.bubble-row{display:flex;gap:8px;align-items:flex-end}
+.bubble-row.mine{flex-direction:row-reverse}
+.byline{display:inline-flex;align-items:center;gap:6px}
 .seg-ctl{display:inline-flex;background:var(--surface);border:1px solid var(--line-strong);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
 .seg-ctl button{border:0;background:none;color:var(--muted);font:500 13px var(--sans);padding:7px 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .seg-ctl button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
@@ -232,8 +249,8 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
 <header class="mast">
   <div class="wrap">
     <div class="top">
-      <div class="brand"><span class="mark">IAA</span><div><b>Ibna Al Aziz</b><small>Service desk</small></div></div>
-      <div class="who" id="who" hidden><span id="whoBranch"></span><span id="whoName"></span><button class="link" id="signOut">Sign out</button></div>
+      <div class="brand"><img src="logo-mark-light.png" alt="" class="brandmark" width="26" height="43"><div><b>Ibna Al Aziz</b><small>Service desk</small></div></div>
+      <div class="who" id="who" hidden><span id="whoBranch"></span><button class="me-btn" id="meBtn" type="button" aria-label="Your profile"><span id="whoAvatar"></span><span id="whoName"></span></button><button class="link" id="signOut">Sign out</button></div>
     </div>
     <nav class="tabs" role="tablist" id="tabs" hidden>
       <button role="tab" data-tab="dash" id="dashTab" hidden>Dashboard</button>
@@ -242,6 +259,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <button role="tab" data-tab="appr" id="apprTab" hidden>Approvals <span class="badge" id="apprBadge" hidden></span></button>
       <button role="tab" data-tab="team" id="teamTab" hidden>Team <span class="badge" id="pendBadge" hidden></span></button>
       <button role="tab" data-tab="settings" id="setTab" hidden>Settings</button>
+      <button role="tab" data-tab="profile" id="profTab">Profile</button>
     </nav>
   </div>
 </header>
@@ -249,6 +267,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
 <main class="wrap">
   <!-- Auth -->
   <section id="authView" class="auth" hidden>
+    <img src="logo.png" alt="Ibna Al Aziz" class="authlogo lg-light" width="180" height="188"><img src="logo-light.png" alt="Ibna Al Aziz" class="authlogo lg-dark" width="180" height="188">
     <div class="sheet">
       <h1 id="authTitle">Sign in</h1>
       <p class="sub" id="authSub">Use your work email to raise and track tickets.</p>
@@ -267,6 +286,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
 
   <!-- Waiting for approval -->
   <section id="waitView" class="auth" hidden>
+    <img src="logo.png" alt="Ibna Al Aziz" class="authlogo lg-light" width="140" height="146"><img src="logo-light.png" alt="Ibna Al Aziz" class="authlogo lg-dark" width="140" height="146">
     <div class="sheet">
       <h1 id="waitTitle">Waiting for approval</h1>
       <p class="sub" id="waitText">Your request has been sent to the admin. You'll get an email once you're approved, then you can raise tickets here.</p>
@@ -348,6 +368,32 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <div class="list" id="memberList"></div>
     </div>
 
+    <!-- Profile -->
+    <div id="tab-profile" class="narrow" hidden>
+      <h1>Your profile</h1>
+      <p class="sub">Your photo appears next to your tickets and replies, so approvers and the service desk know who they're working with.</p>
+      <div class="sheet profile">
+        <div class="ph-wrap"><div id="pfAvatar" class="avatar xl"></div></div>
+        <div class="pf-body">
+          <div class="pf-name" id="pfName"></div>
+          <div class="sub" id="pfMeta" style="margin:0"></div>
+          <div class="row" style="margin-top:12px">
+            <label class="btn small" for="pfFile" style="display:inline-flex;cursor:pointer">Upload photo</label>
+            <input id="pfFile" type="file" accept="image/jpeg,image/png,image/webp" class="vh">
+            <button class="btn ghost small" type="button" id="pfRemove">Remove photo</button>
+          </div>
+          <p class="fhint" style="margin-top:8px">JPG, PNG or WebP. We crop it to a square and shrink it, so any phone photo works.</p>
+          <div id="pfMsg"></div>
+        </div>
+      </div>
+      <h2 class="section-gap">WhatsApp number for updates</h2>
+      <form class="phone-row" id="phoneForm2" novalidate>
+        <input id="pPhone2" type="tel" inputmode="tel" placeholder="0321 1234567" aria-label="WhatsApp number">
+        <button class="btn ghost small" type="submit">Save</button>
+        <span id="pMsg2" class="hint"></span>
+      </form>
+    </div>
+
     <!-- Settings -->
     <div id="tab-settings" hidden>
       <h1>Settings</h1>
@@ -406,6 +452,9 @@ const brTag = b => b ? `<span class="br ${b === "Karachi" ? "KHI" : "LHR"}" titl
 const empBranch = e => /karachi/i.test(e.posting || "") ? "Karachi" : "Lahore";
 const ruleFor = (b, t) => RULES[`${b}|${t}`];
 let dashBranch = "";
+const initials = n => String(n || "?").trim().split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join("") || "?";
+const avatar = (p, size = "") => `<span class="avatar ${size}" aria-hidden="true">${p?.avatar_url ? `<img src="${esc(p.avatar_url)}" alt="" loading="lazy">` : esc(initials(p?.full_name || p?.email))}</span>`;
+const memberById = id => MEMBERS.find(m => m.id === id) || (me && me.id === id ? me : null);
 const memberName = id => { const m = MEMBERS.find(x => x.id === id); return m ? (m.full_name || m.email) : "the approver"; };
 
 /* ---------- SLA ---------- */
@@ -498,6 +547,7 @@ async function onSession(session){
   if (error) { $("#authView").hidden = false; return msg($("#authMsg"),"bad","Signed in, but couldn't load your profile: " + error.message); }
   me = data;
   $("#whoName").textContent = me.full_name || me.email;
+  $("#whoAvatar").innerHTML = avatar(me);
   $("#whoBranch").innerHTML = me.branch ? brTag(me.branch) : (me.is_admin ? `<span class="br">Both offices</span>` : "");
   $("#who").hidden = false; $("#authView").hidden = true;
   if (me.status !== "approved") {
@@ -516,7 +566,7 @@ async function onSession(session){
   refreshApprBadge();
   if (me.is_admin) loadTeam(false);
   const h = location.hash.slice(1);
-  const allowed = ["new","mine","appr"].concat(me.is_admin ? ["dash","team","settings"] : []);
+  const allowed = ["new","mine","appr","profile"].concat(me.is_admin ? ["dash","team","settings"] : []);
   showTab(allowed.includes(h) ? h : (me.is_admin ? "dash" : "new"));
 }
 sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
@@ -540,7 +590,7 @@ async function loadRules(){
   RULES = {}; (data || []).forEach(r => RULES[`${r.branch}|${r.ticket_type}`] = r); renderTypes();
 }
 async function loadMembers(){
-  const { data } = await sb.from("tk_members").select("id,full_name,email,is_admin,status").eq("status","approved").order("full_name");
+  const { data } = await sb.from("tk_members").select("id,full_name,email,is_admin,status,avatar_url,branch").eq("status","approved").order("full_name");
   MEMBERS = data || [];
 }
 async function refreshApprBadge(){
@@ -554,7 +604,8 @@ async function refreshApprBadge(){
 /* ---------- Tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["dash","new","mine","appr","team","settings"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  ["dash","new","mine","appr","team","settings","profile"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  if (t === "profile") renderProfile();
   if (t === "dash") loadAll();
   if (t === "mine") loadMine();
   if (t === "appr") loadAppr();
@@ -666,7 +717,7 @@ function approvalLine(t){
   const cls = { approved:"s-Resolved", rejected:"s-Rejected", pending:"s-Pending", waiting:"s-Closed", skipped:"s-Closed" };
   return `<ol class="chain" aria-label="Approval levels">${steps.map((s,i) => `<li class="st-${s.status}">
       <span class="pill ${cls[s.status]}">${icon[s.status]} L${i+1}</span>
-      <span><b>${esc(memberName(s.approver_id))}</b> · ${word[s.status]}${s.decided_at ? " " + fmt(s.decided_at) : ""}${s.note ? ` · “${esc(s.note)}”` : ""}</span></li>`).join("")}</ol>`;
+      ${avatar(memberById(s.approver_id),"sm")}<span><b>${esc(memberName(s.approver_id))}</b> · ${word[s.status]}${s.decided_at ? " " + fmt(s.decided_at) : ""}${s.note ? ` · “${esc(s.note)}”` : ""}</span></li>`).join("")}</ol>`;
 }
 function chainPicker(prefix, chain, exclude){
   const opts = sel => MEMBERS.filter(m => m.id !== exclude).map(m => `<option value="${m.id}" ${m.id === sel ? "selected" : ""}>${esc(m.full_name || m.email)}</option>`).join("");
@@ -690,7 +741,7 @@ function card(t, mode){ // mode: admin | mine | appr
   const d = Object.entries(t.details || {}).map(([k,v]) =>
     `<dt>${esc(k)}</dt><dd>${/^https?:\/\//i.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>` : esc(v)}</dd>`).join("");
   const owner = t.owner;
-  const by = (mode !== "mine") && owner ? `<span>Raised by ${esc(owner.full_name || owner.email)}</span>` : "";
+  const by = (mode !== "mine") && owner ? `<span class="byline">${avatar(owner,"sm")}Raised by ${esc(owner.full_name || owner.email)}</span>` : "";
   const s = slaInfo(t);
   const n = replyCounts[t.id] || 0;
   const waOwner = admin && owner?.phone
@@ -748,7 +799,7 @@ async function openThread(id){
   const th = $("#th-"+id);
   th.innerHTML = `<div class="hint">Loading replies…</div>`;
   const { data, error } = await sb.from("tk_comments")
-    .select("id, body, created_at, author_id, tk_members!tk_comments_author_id_fkey(full_name,email,is_admin)")
+    .select("id, body, created_at, author_id, tk_members!tk_comments_author_id_fkey(full_name,email,is_admin,avatar_url)")
     .eq("ticket_id", id).order("created_at");
   if (error) return th.innerHTML = `<div class="msg bad">${esc(error.message)}</div>`;
   replyCounts[id] = data.length;
@@ -756,7 +807,8 @@ async function openThread(id){
   th.innerHTML = (data.length ? data.map(r => {
       const a = r.tk_members || {};
       const who = r.author_id === me.id ? "You" : (a.full_name || a.email || "Someone") + (a.is_admin ? " (admin)" : "");
-      return `<div class="bubble ${r.author_id === me.id ? "mine" : ""}"><span class="by">${esc(who)} · ${fmt(r.created_at)}</span>${esc(r.body)}</div>`;
+      const mine = r.author_id === me.id;
+      return `<div class="bubble-row ${mine ? "mine" : ""}">${avatar(mine ? me : a,"md")}<div class="bubble ${mine ? "mine" : ""}"><span class="by">${esc(who)} · ${fmt(r.created_at)}</span>${esc(r.body)}</div></div>`;
     }).join("") : `<div class="hint">No replies yet.</div>`) +
     `<form class="reply-row" data-reply="${id}" novalidate>
        <textarea id="rb-${id}" placeholder="Write a reply" aria-label="Reply" maxlength="4000"></textarea>
@@ -856,6 +908,57 @@ async function decide(b){
   loadAppr(); refreshApprBadge();
 }
 
+$("#meBtn").onclick = () => { history.replaceState(null,"","#profile"); showTab("profile"); };
+function renderProfile(){
+  $("#pfAvatar").outerHTML = `<div id="pfAvatar">${avatar(me,"xl")}</div>`;
+  $("#pfName").textContent = me.full_name || me.email;
+  $("#pfMeta").textContent = [me.email, me.branch ? BRANCHES[me.branch] : (me.is_admin ? "Both offices" : ""), me.is_admin ? "Admin" : ""].filter(Boolean).join(" · ");
+  $("#pfRemove").hidden = !me.avatar_url;
+  $("#pPhone2").value = me.phone ? "0" + me.phone.replace(/^92/, "") : "";
+}
+function squareJpeg(file, size = 320){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const s = Math.min(img.naturalWidth, img.naturalHeight), c = document.createElement("canvas");
+      c.width = c.height = size;
+      c.getContext("2d").drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? resolve(b) : reject(new Error("Couldn't read that image")), "image/jpeg", 0.86);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That file isn't an image we can read. Try a JPG or PNG.")); };
+    img.src = url;
+  });
+}
+$("#pfFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (f.size > 15 * 1024 * 1024) return msg($("#pfMsg"),"bad","That photo is over 15 MB. Pick a smaller one.");
+  msg($("#pfMsg"),"info","Uploading…");
+  try {
+    const blob = await squareJpeg(f);
+    const path = `${me.id}/avatar-${Date.now()}.jpg`;
+    const { error } = await sb.storage.from("tk-avatars").upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    if (error) throw error;
+    const url = sb.storage.from("tk-avatars").getPublicUrl(path).data.publicUrl;
+    const old = me.avatar_url;
+    const { error: e2 } = await sb.from("tk_members").update({ avatar_url: url }).eq("id", me.id);
+    if (e2) throw e2;
+    me.avatar_url = url; const m = MEMBERS.find(x => x.id === me.id); if (m) m.avatar_url = url;
+    if (old && old.includes("/tk-avatars/")) sb.storage.from("tk-avatars").remove([old.split("/tk-avatars/")[1]]);
+    $("#whoAvatar").innerHTML = avatar(me); renderProfile();
+    msg($("#pfMsg"),"ok","Photo updated.");
+  } catch (err) { msg($("#pfMsg"),"bad","Couldn't upload: " + (err.message || err)); }
+};
+$("#pfRemove").onclick = async () => {
+  const old = me.avatar_url;
+  const { error } = await sb.from("tk_members").update({ avatar_url: null }).eq("id", me.id);
+  if (error) return msg($("#pfMsg"),"bad","Couldn't remove: " + error.message);
+  if (old && old.includes("/tk-avatars/")) sb.storage.from("tk-avatars").remove([old.split("/tk-avatars/")[1]]);
+  me.avatar_url = null; const m = MEMBERS.find(x => x.id === me.id); if (m) m.avatar_url = null;
+  $("#whoAvatar").innerHTML = avatar(me); renderProfile(); msg($("#pfMsg"),"ok","Photo removed.");
+};
+$("#phoneForm2").onsubmit = e => { e.preventDefault(); $("#pPhone").value = $("#pPhone2").value; $("#phoneForm").requestSubmit(); setTimeout(() => $("#pMsg2").textContent = $("#pMsg").textContent, 600); };
+
 $("#phoneForm").onsubmit = async e => {
   e.preventDefault();
   const raw = $("#pPhone").value.trim();
@@ -868,7 +971,7 @@ $("#phoneForm").onsubmit = async e => {
   if (!error) me.phone = p || null;
 };
 
-const OWNER_SEL = "*, owner:tk_members!tk_tickets_created_by_fkey(full_name,email,phone)";
+const OWNER_SEL = "*, owner:tk_members!tk_tickets_created_by_fkey(full_name,email,phone,avatar_url)";
 
 async function loadMine(){
   $("#mineList").innerHTML = `<div class="empty">Loading…</div>`;
@@ -1022,7 +1125,7 @@ function personRow(p){
   else if (p.status === "rejected" || p.status === "revoked") btns = `<button class="btn small ghost" data-approve="${p.user_id}">Approve</button>`;
   const brSel = p.user_id && !p.is_admin ? `<select data-setbr="${p.user_id}" aria-label="Office for ${esc(p.full_name || p.email)}" style="width:auto;padding:6px 8px;font-size:13px"><option value="">No office</option>${Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${k===p.branch?"selected":""}>${v}</option>`).join("")}</select>` : brTag(p.branch);
   return `<div class="person" id="p-${p.user_id || esc(p.email)}">
-    <div class="info"><span class="nm">${esc(p.full_name || p.email)}${p.is_admin ? ' <span class="hint">· admin</span>' : ""}${self ? ' <span class="hint">· you</span>' : ""}</span><span class="sm">${sub}</span></div>
+    ${avatar(memberById(p.user_id) || p,"md")}<div class="info"><span class="nm">${esc(p.full_name || p.email)}${p.is_admin ? ' <span class="hint">· admin</span>' : ""}${self ? ' <span class="hint">· you</span>' : ""}</span><span class="sm">${sub}</span></div>
     ${brSel}
     <span class="pill s-${esc(p.status)}">${esc(p.status[0].toUpperCase() + p.status.slice(1))}</span>
     <div class="btns">${btns}</div></div>`;
