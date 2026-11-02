@@ -449,14 +449,16 @@ const TYPES = {
     ["Contract value (PKR)","money",false]
   ],
   "Edit Transaction": [
-    ["Voucher / transaction no.","text",true,"As shown in ProcessSoft"],["Transaction date","date",true],
+    ["Voucher type","select:Journal Voucher|Payment Voucher|Receive Voucher|Purchase Voucher",true],["Voucher / transaction no.","text",true,"As shown in ProcessSoft"],
+    ["Transaction date","date",true],
     ["Module","select:Money (accounts)|Goods (stock / materials)|People (payroll)",true],["Project","text",false],
     ["What is wrong now","area",true,"e.g. Amount entered as 15,000, charged to Project A","full"],
     ["What it should be","area",true,"e.g. Amount 1,500, charged to Project B","full"],
     ["Reason","text",true,"","full"]
   ],
   "Delete Transaction": [
-    ["Voucher / transaction no.","text",true,"As shown in ProcessSoft"],["Transaction date","date",true],
+    ["Voucher type","select:Journal Voucher|Payment Voucher|Receive Voucher|Purchase Voucher",true],["Voucher / transaction no.","text",true,"As shown in ProcessSoft"],
+    ["Transaction date","date",true],
     ["Module","select:Money (accounts)|Goods (stock / materials)|People (payroll)",true],["Amount (PKR)","money",true],
     ["Project","text",false],["Reason for deletion","area",true,"Say what went wrong and whether a correct entry has been or will be posted","full"]
   ],
@@ -749,7 +751,8 @@ $("#tkForm").onsubmit = async e => {
   let title = $("#fTitle").value.trim();
   if (!title) {
     const who = details["Employee name"], where = details["Site / location name"];
-    const acc = details["Project name"] || details["Voucher / transaction no."] || details["Head name"] || details["Material name"];
+    const vno = details["Voucher / transaction no."] ? [details["Voucher type"], details["Voucher / transaction no."]].filter(Boolean).join(" ") : "";
+    const acc = details["Project name"] || vno || details["Head name"] || details["Material name"];
     title = [typeLabel(curType) === "Other" ? (curCat === "Accounts" ? "Accounts request" : "Request") : curType, acc, where, who].filter(Boolean).join(" - ") || desc.slice(0,80) || curType;
   }
   $("#submitBtn").disabled = true; msg($("#tkMsg"),"info","Submitting…");
