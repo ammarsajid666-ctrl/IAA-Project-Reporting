@@ -209,6 +209,40 @@ table.rules input[type=number]{width:90px}
 .toggle{display:inline-flex;align-items:center;gap:8px;flex-direction:row;font-weight:500;cursor:pointer}
 .toggle input{width:auto;accent-color:var(--accent);transform:scale(1.15)}
 .section-gap{margin-top:28px}
+.brs-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.brs-grid{grid-template-columns:1fr}}
+.brs-grid > *,.brs-tables > *{min-width:0}
+.brs-tables{display:flex;flex-direction:column;gap:22px}
+.brs-stmt{gap:4px}
+.brs-stmt h3{margin-bottom:8px}
+.bl{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.bl span{min-width:0}
+.bl b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.bl.item{font-size:13px;color:var(--muted);padding:4px 0 4px 14px;border-bottom:1px dashed var(--line)}
+.bl.item b{font-weight:500}
+.bl.strong{font-weight:600}
+.bl.total{border-top:2px solid var(--fg);border-bottom:0;padding-top:9px;margin-top:4px;font-weight:700}
+.recon{font:600 14px var(--sans);padding:8px 14px;border-radius:999px;white-space:nowrap}
+.recon.ok{background:var(--ok-soft);color:var(--ok)} .recon.bad{background:var(--bad-soft);color:var(--bad)}
+.issues{margin-bottom:14px;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px}
+.issues ul{margin:6px 0 0;padding-left:18px}
+.brs-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:20px 0 12px}
+h3.tt{font-size:14px;margin:0 0 8px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+table.brs-t{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+table.brs-t th{font:600 11px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--raised);position:sticky;top:0}
+table.brs-t td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.brs-t .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.brs-t .nowrap{white-space:nowrap}
+table.brs-t .desc{min-width:220px;overflow-wrap:anywhere}
+table.brs-t td:nth-child(2){width:110px}
+table.brs-t .sub2,.sub2{font-size:12px;color:var(--muted)}
+table.brs-t tr.sel td{background:var(--accent-soft)}
+table.brs-t tr.st-match td,table.brs-t tr.st-earlier td,table.brs-t tr.st-rev td,table.brs-t tr.st-after td{color:var(--muted)}
+table.brs-t input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+.bst{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.bst.st-match{background:var(--ok-soft);color:var(--ok)} .bst.st-open{background:var(--warn-soft);color:var(--warn)}
+.bst.st-earlier,.bst.st-after,.bst.st-rev{background:var(--raised);color:var(--muted);border:1px solid var(--line)}
+.brs-t.list{min-width:720px}
 .files{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .files:empty{display:none}
 a.file{display:inline-flex;align-items:center;gap:8px;max-width:260px;border:1px solid var(--line);border-radius:8px;padding:5px 10px 5px 6px;font-size:13px;color:var(--fg);text-decoration:none;background:var(--raised)}
@@ -276,6 +310,7 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <button role="tab" data-tab="appr" id="apprTab" hidden>Approvals <span class="badge" id="apprBadge" hidden></span></button>
       <button role="tab" data-tab="team" id="teamTab" hidden>Team <span class="badge" id="pendBadge" hidden></span></button>
       <button role="tab" data-tab="settings" id="setTab" hidden>Settings</button>
+      <button role="tab" data-tab="brs" id="brsTab" hidden>Bank reconciliation</button>
       <button role="tab" data-tab="assigned" id="asgTab" hidden>Assigned to me <span class="badge" id="asgBadge" hidden></span></button>
       <button role="tab" data-tab="profile" id="profTab">Profile</button>
     </nav>
@@ -389,6 +424,27 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
       <div class="list" id="memberList"></div>
     </div>
 
+    <!-- Bank reconciliation -->
+    <div id="tab-brs" hidden>
+      <div class="pagehead"><div class="grow"><div class="eyebrow">Accounts</div><h1>Bank reconciliation</h1>
+        <p class="sub">Upload the bank ledger exported from ProcessSoft and the bank's statement for the same account. Entries are matched by cheque number, amount and date, and the BRS is prepared for you.</p></div></div>
+      <form id="brsForm" class="sheet" novalidate>
+        <div class="grid">
+          <div class="field"><label for="brsBank">Bank</label><select id="brsBank"></select></div>
+          <div class="field" id="brsBankOtherWrap" hidden><label for="brsBankOther">Bank name</label><input id="brsBankOther" placeholder="e.g. Meezan Bank"></div>
+          <div class="field"><label for="brsBranch">Office</label><select id="brsBranch"></select></div>
+          <div class="field"><label for="brsAcct">Account no. <span class="opt">optional</span></label><input id="brsAcct" placeholder="e.g. 5590-xxxx"></div>
+          <div class="field"><label for="brsLedger">ProcessSoft bank ledger (PDF)</label><input id="brsLedger" type="file" accept="application/pdf,.pdf" class="filein"><p class="fhint">Chart of Accounts → the bank's ledger → export as PDF.</p></div>
+          <div class="field"><label for="brsStatement">Bank statement (PDF)</label><input id="brsStatement" type="file" accept="application/pdf,.pdf" class="filein"><p class="fhint">The digital PDF from internet banking, not a scan.</p></div>
+        </div>
+        <div class="row" style="margin-top:16px"><button class="btn" id="brsGo" type="submit">Reconcile</button><span class="hint">Files are read in your browser. Only the results are saved, not the PDFs.</span></div>
+        <div id="brsMsg"></div>
+      </form>
+      <div id="brsOut" hidden></div>
+      <h2 class="section-gap">Saved reconciliations</h2>
+      <div id="brsList"></div>
+    </div>
+
     <!-- Assigned to me -->
     <div id="tab-assigned" class="narrow" hidden>
       <h1>Assigned to me</h1>
@@ -437,6 +493,229 @@ ol.chain li.st-waiting,ol.chain li.st-skipped{color:var(--muted)}
 <div class="tip" id="tip" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// BRS core: PDF text -> lines, ProcessSoft ledger parser, generic bank statement parser, matcher, BRS summary.
+// Works in the browser (window.BRS) and in Node (module.exports) for testing.
+(function (root) {
+  const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12 };
+  const NUM_RE = /^\(?-?[\d,]+(?:\.\d+)?\)?(?:\s*(?:cr|dr))?$/i;
+  const isNum = s => NUM_RE.test(s.trim()) && /\d/.test(s) && !/^\d{1,2}[-/]/.test(s);
+  const toNum = s => { let t = s.trim(), neg = /^\(.*\)$/.test(t) || /^-/.test(t) || /dr$/i.test(t); t = t.replace(/[(),\s]|cr$|dr$/gi, "").replace(/^-/, ""); const v = parseFloat(t); return isNaN(v) ? null : (neg ? -v : v); };
+  const round2 = v => Math.round(v * 100) / 100;
+  const iso = (y, m, d) => `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+  function parseDate(s) {
+    if (!s) return null;
+    let t = s.trim().replace(/\s+/g, " ");
+    let m = t.match(/^(\d{1,2})[-/ .]([A-Za-z]{3,4})[-/ .,]*(\d{2,4})$/);
+    if (m && MONTHS[m[2].toLowerCase()]) { let y = +m[3]; if (y < 100) y += 2000; return iso(y, MONTHS[m[2].toLowerCase()], +m[1]); }
+    m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
+    if (m) { let y = +m[3]; if (y < 100) y += 2000; const d = +m[1], mo = +m[2]; if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) return iso(y, mo, d); }
+    m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if (m) return iso(+m[1], +m[2], +m[3]);
+    m = t.match(/^([A-Za-z]{3,4})\s+(\d{1,2}),?\s+(\d{4})$/);
+    if (m && MONTHS[m[1].toLowerCase()]) return iso(+m[3], MONTHS[m[1].toLowerCase()], +m[2]);
+    return null;
+  }
+  const chequeOf = s => { const m = String(s || "").match(/(?:che?que|chq|cheq|instrument|inst)\.?\s*(?:no\.?|number|#)?\s*[#:\-]?\s*(\d{5,})/i); return m ? m[1].replace(/^0+/, "") : null; };
+
+  // ---------- PDF -> positioned lines ----------
+  async function pdfLines(pdfjsLib, data) {
+    const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
+    const lines = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const items = tc.items.filter(i => i.str && i.str.trim()).map(i => ({ str: i.str.trim(), x: i.transform[4], y: i.transform[5], w: i.width || 0 }));
+      items.sort((a, b) => b.y - a.y || a.x - b.x);
+      for (const it of items) {
+        let ln = lines.length && lines[lines.length - 1].page === p && Math.abs(lines[lines.length - 1].y - it.y) <= 2.5 ? lines[lines.length - 1] : null;
+        if (!ln) { ln = { page: p, y: it.y, items: [] }; lines.push(ln); }
+        ln.items.push({ str: it.str, x: it.x, x2: it.x + it.w });
+      }
+      lines.filter(l => l.page === p).forEach(l => l.items.sort((a, b) => a.x - b.x));
+    }
+    lines.forEach(l => l.text = l.items.map(i => i.str).join(" "));
+    return lines;
+  }
+
+  // ---------- ProcessSoft ledger ----------
+  function parseLedger(lines) {
+    const issues = [];
+    const hdrIdx = lines.findIndex(l => /sr\.?\s*#/i.test(l.text) && /debit/i.test(l.text) && /credit/i.test(l.text));
+    if (hdrIdx < 0) throw new Error("This doesn't look like a ProcessSoft ledger: no Sr.# / Debit / Credit header found.");
+    const hdr = lines[hdrIdx];
+    const col = name => { const it = hdr.items.find(i => new RegExp("^" + name, "i").test(i.str)); return it ? it.x : null; };
+    const xDate = col("date"), xNarr = col("narration"), xType = col("type"), xVoc = col("voc"), xDebit = col("debit"), xCredit = col("credit");
+    const nums = hdr.items.filter(i => isNum(i.str));
+    const opening = nums.length ? toNum(nums[nums.length - 1].str) : null;
+    if (opening === null) issues.push("Opening balance not found in the header; assumed 0.");
+    const rows = [];
+    let cur = null;
+    for (let i = hdrIdx + 1; i < lines.length; i++) {
+      const l = lines[i];
+      if (/sr\.?\s*#/i.test(l.text) && /debit/i.test(l.text)) continue;          // repeated header on next page
+      if (/^(no|#)$/i.test(l.text.trim()) || /^No\s+#$/i.test(l.text.trim())) continue;
+      if (/ledger report/i.test(l.text)) continue;
+      const first = l.items[0];
+      const startsRow = first && /^\d+$/.test(first.str) && first.x < (xDate ?? 60) - 5;
+      if (startsRow) { cur = { sr: +first.str, dateParts: [], narr: [], type: "", voc: "", nums: [] }; rows.push(cur); }
+      if (!cur) continue;
+      for (const it of l.items) {
+        if (startsRow && it === first) continue;
+        if (xVoc !== null && it.x >= xVoc - 4 && isNum(it.str) && it.x > (xDebit ?? xVoc) - 12) { cur.nums.push({ v: toNum(it.str), x: it.x }); continue; }
+        if (xType !== null && it.x >= xType - 12 && it.x < (xVoc ?? xType + 40) - 4 && /^[A-Za-z]+$/.test(it.str)) { cur.type = (cur.type + " " + it.str).trim(); continue; }
+        if (xVoc !== null && it.x >= xVoc - 8 && it.x < (xDebit ?? xVoc + 30) - 8 && /^\d+$/.test(it.str)) { cur.voc = it.str; continue; }
+        if (xDate !== null && it.x < xDate + 20 && (/^\d{1,2}-?$/.test(it.str) || /^[A-Za-z]{3,4}-\d{2,4}$/.test(it.str) || parseDate(it.str))) { cur.dateParts.push(it.str); continue; }
+        // narration may contain a type word glued to the voucher number (e.g. "Payment 1201")
+        const m = it.str.match(/^(Payment|Receive|Journal|Contra|Receipt)\s+(\d+)$/i);
+        if (m && xType !== null && it.x >= xType - 30) { cur.type = m[1]; cur.voc = m[2]; continue; }
+        cur.narr.push(it.str);
+      }
+    }
+    let prev = opening ?? 0;
+    const out = [];
+    for (const r of rows) {
+      const date = parseDate(r.dateParts.join("").replace(/-\s*/g, "-"));
+      if (!r.nums.length) { issues.push(`Row ${r.sr}: no amount found.`); continue; }
+      const balance = r.nums[r.nums.length - 1].v;
+      let amount = r.nums.length > 1 ? Math.abs(r.nums[r.nums.length - 2].v) : null;
+      const delta = round2(balance - prev);
+      let dir = delta >= 0 ? "in" : "out";
+      if (amount === null) amount = Math.abs(delta);
+      if (Math.abs(Math.abs(delta) - amount) > 0.5) {
+        // fall back to column position for direction
+        const amtX = r.nums.length > 1 ? r.nums[r.nums.length - 2].x : null;
+        if (amtX !== null && xCredit !== null && xDebit !== null) dir = Math.abs(amtX - xDebit) < Math.abs(amtX - xCredit) ? "in" : "out";
+        issues.push(`Row ${r.sr}: running balance doesn't add up (expected ${round2(prev + (dir === "in" ? amount : -amount)).toLocaleString()}, ledger shows ${balance.toLocaleString()}).`);
+      }
+      if (!date) issues.push(`Row ${r.sr}: date not readable ("${r.dateParts.join(" ")}").`);
+      const narration = r.narr.join(" ").replace(/\s+/g, " ").trim();
+      out.push({ id: "L" + r.sr, sr: r.sr, date, narration, type: r.type, voc: r.voc, amount: round2(amount), dir, balance, cheque: chequeOf(narration) });
+      prev = balance;
+    }
+    return { opening: opening ?? 0, rows: out, closing: out.length ? out[out.length - 1].balance : (opening ?? 0), issues };
+  }
+
+  // ---------- Generic bank statement (date at line start, ... , amount, balance at line end) ----------
+  function parseBankStatement(lines) {
+    const issues = [];
+    const rows = [];
+    let opening = null, cur = null, prevBal = null;
+    const dateAtStart = l => {
+      const t = l.items.slice(0, 3).map(i => i.str);
+      for (let k = 3; k >= 1; k--) { const d = parseDate(t.slice(0, k).join(" ")); if (d) return { date: d, used: k }; }
+      const d1 = parseDate((t[0] || "").replace(/\s+/g, "")); return d1 ? { date: d1, used: 1 } : null;
+    };
+    for (const l of lines) {
+      const txt = l.text;
+      const ob = txt.match(/(opening|brought\s+forward|b\/f|previous)\s+balance[^\d\-(]*([\-(]?[\d,]+\.\d{2}\)?(?:\s*(?:cr|dr))?)/i) || txt.match(/balance\s+(?:b\/f|brought forward)[^\d\-(]*([\-(]?[\d,]+\.\d{2}\)?)/i);
+      if (ob && opening === null && !rows.length) { opening = toNum(ob[ob.length - 1]); prevBal = opening; continue; }
+      const d = dateAtStart(l);
+      const tailNums = [];
+      for (let k = l.items.length - 1; k >= 0 && tailNums.length < 3; k--) { if (isNum(l.items[k].str) && /[.,]/.test(l.items[k].str)) tailNums.unshift({ v: toNum(l.items[k].str), x: l.items[k].x, k }); else break; }
+      if (d && tailNums.length >= 2) {
+        const balance = tailNums[tailNums.length - 1].v;
+        const amtTok = tailNums[tailNums.length - 2];
+        const descItems = l.items.slice(d.used, tailNums[0].k);
+        let valueDate = null;
+        if (descItems.length && parseDate(descItems[0].str)) valueDate = parseDate(descItems.shift().str);
+        cur = { date: d.date, valueDate, desc: descItems.map(i => i.str), amount: Math.abs(amtTok.v), amtX: amtTok.x, balance, extra: tailNums.length > 2 ? tailNums[0].v : null };
+        rows.push(cur);
+        continue;
+      }
+      if (/closing balance|total|page \d+|statement of account|balance c\/f|carried forward/i.test(txt)) { cur = null; continue; }
+      if (cur && !d && !tailNums.length && l.items.length) cur.desc.push(txt);
+    }
+    if (!rows.length) throw new Error("No transactions found in the bank statement. If it's a scanned image, ask the bank for a digital PDF or Excel export.");
+    if (prevBal === null) {
+      const r0 = rows[0];
+      // infer opening from first row: try both directions
+      prevBal = null;
+      issues.push("Opening balance line not found; inferred from the first transaction.");
+    }
+    const out = [];
+    rows.forEach((r, i) => {
+      let dir;
+      if (prevBal !== null) {
+        const delta = round2(r.balance - prevBal);
+        dir = delta >= 0 ? "in" : "out";
+        if (Math.abs(Math.abs(delta) - r.amount) > 0.5) {
+          if (r.extra !== null && Math.abs(Math.abs(delta) - Math.abs(r.extra)) < 0.5) { r.amount = Math.abs(r.extra); }
+          else issues.push(`${r.date}: balance doesn't add up for ${r.amount.toLocaleString()} (check this line).`);
+        }
+      } else {
+        const nxt = rows[i + 1];
+        dir = /deposit|credit|cr\b|received|inward|profit/i.test(r.desc.join(" ")) ? "in" : "out";
+        if (nxt) { const d2 = round2(nxt.balance - r.balance); /* no-op: direction for first row is a guess */ }
+        opening = round2(r.balance - (dir === "in" ? r.amount : -r.amount));
+      }
+      const desc = r.desc.join(" ").replace(/\s+/g, " ").trim();
+      out.push({ id: "B" + (i + 1), date: r.date, valueDate: r.valueDate, narration: desc, amount: round2(r.amount), dir, balance: r.balance, cheque: chequeOf(desc) || (desc.match(/\b(\d{6,10})\b/) || [])[1]?.replace(/^0+/, "") || null });
+      prevBal = r.balance;
+    });
+    return { opening: opening ?? 0, rows: out, closing: out[out.length - 1].balance, issues };
+  }
+
+  // ---------- Matching ----------
+  const days = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
+  function autoMatch(ledgerRows, bankRows, opts = {}) {
+    const maxDays = opts.maxDays ?? 10;
+    const pairs = [];
+    const usedL = new Set(), usedB = new Set();
+    // 0) self-cancelling pairs inside the ledger (entry + reversal, same amount, opposite direction, within 3 days)
+    const reversals = [];
+    for (const a of ledgerRows) {
+      if (usedL.has(a.id)) continue;
+      const b = ledgerRows.find(x => x !== a && !usedL.has(x.id) && x.amount === a.amount && x.dir !== a.dir && Math.abs(days(a.date, x.date)) <= 3 && !bankRows.some(br => br.amount === a.amount));
+      if (b) { usedL.add(a.id); usedL.add(b.id); reversals.push([a.id, b.id]); }
+    }
+    const tryPass = (test, how) => {
+      for (const l of ledgerRows) {
+        if (usedL.has(l.id)) continue;
+        const cands = bankRows.filter(b => !usedB.has(b.id) && b.dir === l.dir && Math.abs(b.amount - l.amount) < 0.5 && test(l, b));
+        if (!cands.length) continue;
+        cands.sort((x, y) => Math.abs(days(l.date, x.date)) - Math.abs(days(l.date, y.date)));
+        const b = cands[0];
+        usedL.add(l.id); usedB.add(b.id); pairs.push({ l: [l.id], b: [b.id], how });
+      }
+    };
+    tryPass((l, b) => l.cheque && b.cheque && (b.cheque.endsWith(l.cheque) || l.cheque.endsWith(b.cheque)), "cheque no.");
+    tryPass((l, b) => l.date && b.date && Math.abs(days(l.date, b.date)) <= 3, "amount + date");
+    tryPass((l, b) => l.date && b.date && days(l.date, b.date) >= -3 && days(l.date, b.date) <= maxDays, "amount, within " + maxDays + " days");
+    return { pairs, reversals };
+  }
+
+  // ---------- BRS ----------
+  function summarize({ ledger, bank, pairs, reversals, periodEnd, broughtForward = [] }) {
+    const matchedL = new Set(pairs.flatMap(p => p.l).concat((reversals || []).flat()));
+    const matchedB = new Set(pairs.flatMap(p => p.b));
+    const inPeriod = r => !periodEnd || !r.date || r.date <= periodEnd;
+    const ledgerRows = ledger.rows.concat(broughtForward);
+    const lOpen = ledgerRows.filter(r => !matchedL.has(r.id) && inPeriod(r));
+    const bOpen = bank.rows.filter(r => !matchedB.has(r.id));
+    const lastLedgerRow = ledger.rows.filter(inPeriod).slice(-1)[0];
+    const ledgerClosing = lastLedgerRow ? lastLedgerRow.balance : ledger.opening;
+    const sum = a => round2(a.reduce((s, r) => s + r.amount, 0));
+    const depositsInTransit = lOpen.filter(r => r.dir === "in");       // in books, not yet in bank
+    const unpresented = lOpen.filter(r => r.dir === "out");            // cheques issued, not yet cleared
+    const bankCredits = bOpen.filter(r => r.dir === "in");             // in bank, not in books
+    const bankDebits = bOpen.filter(r => r.dir === "out");
+    const adjustedBank = round2(bank.closing + sum(depositsInTransit) - sum(unpresented));
+    const adjustedBooks = round2(ledgerClosing + sum(bankCredits) - sum(bankDebits));
+    return {
+      ledgerClosing, bankClosing: bank.closing, depositsInTransit, unpresented, bankCredits, bankDebits,
+      adjustedBank, adjustedBooks, difference: round2(adjustedBank - adjustedBooks),
+      afterPeriod: ledger.rows.filter(r => periodEnd && r.date && r.date > periodEnd),
+      matchedCount: pairs.length, reversalCount: (reversals || []).length,
+    };
+  }
+
+  const api = { parseDate, chequeOf, pdfLines, parseLedger, parseBankStatement, autoMatch, summarize, toNum, isNum };
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else root.BRS = api;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
 <script>
 const SUPABASE_URL = "https://gqsvyxiiqxlhlxhtkwzj.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdxc3Z5eGlpcXhsaGx4aHRrd3pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzNDA3NzMsImV4cCI6MjEwODkxNjc3M30.w1WPoD3nThNi_fwJ76qvbhzyN4OG0i6mQ9JC_kHMFsE";
@@ -632,13 +911,14 @@ async function onSession(session){
   }
   $("#waitView").hidden = true; $("#appView").hidden = false; $("#tabs").hidden = false;
   ["#dashTab","#teamTab","#setTab"].forEach(s => $(s).hidden = !me.is_admin);
+  $("#brsTab").hidden = !(me.is_admin || me.can_brs);
   $("#pPhone").value = me.phone ? "0" + me.phone.replace(/^92/, "") : "";
   await Promise.all([loadEmps(), loadRules(), loadMembers()]);
   fillAssign();
   refreshApprBadge();
   if (me.is_admin) loadTeam(false);
   const h = location.hash.slice(1);
-  const allowed = ["new","mine","appr","assigned","profile"].concat(me.is_admin ? ["dash","team","settings"] : []);
+  const allowed = ["new","mine","appr","assigned","profile"].concat(me.is_admin || me.can_brs ? ["brs"] : []).concat(me.is_admin ? ["dash","team","settings"] : []);
   showTab(allowed.includes(h) ? h : (me.is_admin ? "dash" : "new"));
 }
 sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => onSession(session), 0); });
@@ -662,7 +942,7 @@ async function loadRules(){
   RULES = {}; (data || []).forEach(r => RULES[`${r.branch}|${r.ticket_type}`] = r); renderTypes();
 }
 async function loadMembers(){
-  const { data } = await sb.from("tk_members").select("id,full_name,email,is_admin,status,avatar_url,branch").eq("status","approved").order("full_name");
+  const { data } = await sb.from("tk_members").select("id,full_name,email,is_admin,status,avatar_url,branch,can_brs").eq("status","approved").order("full_name");
   MEMBERS = data || [];
 }
 async function refreshAsgBadge(){
@@ -683,7 +963,8 @@ async function refreshApprBadge(){
 /* ---------- Tabs ---------- */
 function showTab(t){
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
-  ["dash","new","mine","appr","team","settings","profile","assigned"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  ["dash","new","mine","appr","team","settings","profile","assigned","brs"].forEach(x => $("#tab-"+x).hidden = x !== t);
+  if (t === "brs") brsInit();
   if (t === "profile") renderProfile();
   if (t === "assigned") loadAssigned();
   if (t === "dash") loadAll();
@@ -1322,9 +1603,18 @@ function personRow(p){
   return `<div class="person" id="p-${p.user_id || esc(p.email)}">
     ${avatar(memberById(p.user_id) || p,"md")}<div class="info"><span class="nm">${esc(p.full_name || p.email)}${p.is_admin ? ' <span class="hint">· admin</span>' : ""}${self ? ' <span class="hint">· you</span>' : ""}</span><span class="sm">${sub}</span></div>
     ${brSel}
+    ${p.user_id && !p.is_admin && p.status === "approved" ? `<label class="toggle" title="Can use Bank reconciliation"><input type="checkbox" data-setbrs="${p.user_id}" ${memberById(p.user_id)?.can_brs ? "checked" : ""}> BRS</label>` : ""}
     <span class="pill s-${esc(p.status)}">${esc(p.status[0].toUpperCase() + p.status.slice(1))}</span>
     <div class="btns">${btns}</div></div>`;
 }
+document.addEventListener("change", async e => {
+  const c = e.target.closest("[data-setbrs]"); if (!c) return;
+  c.disabled = true;
+  const { error } = await sb.from("tk_members").update({ can_brs: c.checked }).eq("id", c.dataset.setbrs);
+  c.disabled = false;
+  if (error) { c.checked = !c.checked; return; }
+  const m = MEMBERS.find(x => x.id === c.dataset.setbrs); if (m) m.can_brs = c.checked;
+});
 document.addEventListener("change", async e => {
   const s = e.target.closest("[data-setbr]"); if (!s) return;
   s.disabled = true;
@@ -1392,6 +1682,241 @@ document.addEventListener("click", async e => {
     : `${BRANCHES[ruleBranch]} · ${k}: ${chain.length ? chain.map((id,n) => `L${n+1} ${memberName(id)}`).join(" → ") : "no approval"}, ${hrs}h SLA. New tickets follow this rule.`);
   if (!error) { await loadRules(); refreshApprBadge(); renderRules(); }
 });
+/* ---------- Bank reconciliation (admins + staff with BRS access) ---------- */
+const BANKS = ["Bank Alfalah", "Bank Al Habib", "BankIslami"];
+const PKR = v => (v < 0 ? "-" : "") + "Rs " + Math.abs(Number(v) || 0).toLocaleString("en-PK", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const fmtD = d => d ? new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const ledgerKey = r => [r.date, r.type, r.voc, r.amount, r.dir].join("|");
+let brs = null;               // current reconciliation in progress
+let brsSel = { L: new Set(), B: new Set() };
+let brsOnlyOpen = false;
+
+function loadScript(src){ return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res(); const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Couldn't load " + src)); document.head.appendChild(s); }); }
+async function pdfLib(){
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  return window.pdfjsLib;
+}
+
+function brsInit(){
+  $("#brsBank").innerHTML = BANKS.map(b => `<option>${b}</option>`).join("") + `<option value="__other">Other bank…</option>`;
+  $("#brsBranch").innerHTML = Object.entries(BRANCHES).map(([k,v]) => `<option value="${k}" ${me.branch === k ? "selected" : ""}>${v}</option>`).join("");
+  loadBrsList();
+  if (brs) renderBrs();
+}
+document.addEventListener("change", e => { if (e.target.id === "brsBank") $("#brsBankOtherWrap").hidden = e.target.value !== "__other"; });
+
+$("#brsForm").onsubmit = async e => {
+  e.preventDefault();
+  const bank = $("#brsBank").value === "__other" ? $("#brsBankOther").value.trim() : $("#brsBank").value;
+  const lf = $("#brsLedger").files[0], bf = $("#brsStatement").files[0];
+  if (!bank) return msg($("#brsMsg"),"bad","Enter the bank name.");
+  if (!lf || !bf) return msg($("#brsMsg"),"bad","Choose both files: the ProcessSoft bank ledger and the bank's statement.");
+  const btn = $("#brsGo"); btn.disabled = true; msg($("#brsMsg"),"info","Reading the PDFs…");
+  try {
+    const lib = await pdfLib();
+    const [lLines, bLines] = await Promise.all([lf, bf].map(async f => BRS.pdfLines(lib, new Uint8Array(await f.arrayBuffer()))));
+    let ledger, bankSt;
+    try { ledger = BRS.parseLedger(lLines); } catch (err) { throw new Error("Ledger: " + err.message); }
+    try { bankSt = BRS.parseBankStatement(bLines); } catch (err) { throw new Error("Bank statement: " + err.message); }
+    if (!ledger.rows.length) throw new Error("Ledger: no entries found.");
+    const periodFrom = bankSt.rows[0].date, periodTo = bankSt.rows[bankSt.rows.length - 1].date;
+    // ledger rows already cleared in earlier saved reconciliations for this bank
+    const { data: prev } = await sb.from("brs_reports").select("cleared_keys,period_to").eq("bank", bank).lt("period_to", periodTo);
+    const cleared = new Set((prev || []).flatMap(p => p.cleared_keys || []));
+    const earlier = ledger.rows.filter(r => r.date && r.date < periodFrom && cleared.has(ledgerKey(r))).map(r => r.id);
+    const candidates = ledger.rows.filter(r => !earlier.includes(r.id) && (!r.date || r.date <= periodTo));
+    const { pairs, reversals } = BRS.autoMatch(candidates, bankSt.rows);
+    brs = { id: null, status: "draft", bank, branch: $("#brsBranch").value, accountNo: $("#brsAcct").value.trim(), ledgerFile: lf.name, statementFile: bf.name,
+            ledger, bankSt, pairs, reversals, earlier, periodFrom, periodTo, note: "" };
+    brsSel = { L: new Set(), B: new Set() };
+    msg($("#brsMsg"));
+    renderBrs();
+    $("#brsOut").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    msg($("#brsMsg"),"bad", (err.message || String(err)) + (/statement/i.test(err.message || "") ? " Send this statement to Ammar so the reader can be tuned for this bank's layout." : ""));
+  }
+  btn.disabled = false;
+};
+
+function brsSummary(){
+  const ledger = { ...brs.ledger, rows: brs.ledger.rows.filter(r => !brs.earlier.includes(r.id)) };
+  return BRS.summarize({ ledger, bank: brs.bankSt, pairs: brs.pairs, reversals: brs.reversals, periodEnd: brs.periodTo });
+}
+function rowStatus(side, r){
+  if (side === "L" && brs.earlier.includes(r.id)) return { cls: "st-earlier", text: "Cleared earlier" };
+  if (side === "L" && r.date && r.date > brs.periodTo) return { cls: "st-after", text: "After period" };
+  if (side === "L" && brs.reversals.some(p => p.includes(r.id))) { const o = brs.reversals.find(p => p.includes(r.id)).find(x => x !== r.id); return { cls: "st-rev", text: "Reversed by #" + o.slice(1) }; }
+  const p = brs.pairs.find(p => p[side.toLowerCase()].includes(r.id));
+  if (p) { const other = side === "L" ? p.b : p.l; return { cls: "st-match", text: "Matched · " + p.how, pair: p, other }; }
+  return { cls: "st-open", text: side === "L" ? (r.dir === "in" ? "Not yet in bank" : "Not yet cleared") : "Not in ProcessSoft" };
+}
+function brsTable(side){
+  const rows = side === "L" ? brs.ledger.rows : brs.bankSt.rows;
+  const editable = brs.status === "draft" || me.is_admin;
+  const list = rows.filter(r => !brsOnlyOpen || rowStatus(side, r).cls === "st-open");
+  return `<div class="tablewrap"><table class="brs-t"><thead><tr><th></th><th>Date</th><th>Description</th><th class="num">In</th><th class="num">Out</th><th>Status</th></tr></thead><tbody>${
+    list.map(r => {
+      const st = rowStatus(side, r), open = st.cls === "st-open";
+      const ref = side === "L" ? [r.type, r.voc].filter(Boolean).join(" ") : "";
+      return `<tr class="${st.cls}${brsSel[side].has(r.id) ? " sel" : ""}">
+        <td>${open && editable ? `<input type="checkbox" data-brsel="${side}:${r.id}" ${brsSel[side].has(r.id) ? "checked" : ""} aria-label="Select">` : ""}</td>
+        <td class="nowrap">${fmtD(r.date)}</td>
+        <td><div class="desc">${esc(r.narration || "—")}</div><div class="sub2">${[ref, r.cheque ? "Chq " + r.cheque : ""].filter(Boolean).map(esc).join(" · ")}</div></td>
+        <td class="num">${r.dir === "in" ? r.amount.toLocaleString("en-PK") : ""}</td>
+        <td class="num">${r.dir === "out" ? r.amount.toLocaleString("en-PK") : ""}</td>
+        <td><span class="bst ${st.cls}">${esc(st.text)}</span>${st.pair && editable ? ` <button class="link" data-unmatch="${side}:${r.id}">Unmatch</button>` : ""}</td></tr>`;
+    }).join("") || `<tr><td colspan="6" class="muted" style="text-align:center;padding:18px">Nothing outstanding on this side.</td></tr>`
+  }</tbody></table></div>`;
+}
+function renderBrs(){
+  const out = $("#brsOut"); out.hidden = false;
+  const S = brsSummary();
+  const ok = Math.abs(S.difference) < 0.5;
+  const line = (label, v, cls = "") => `<div class="bl ${cls}"><span>${label}</span><b>${PKR(v)}</b></div>`;
+  const items = (arr, sign) => arr.map(r => `<div class="bl item"><span>${fmtD(r.date)} · ${esc((r.narration || "").slice(0, 70))}${r.cheque ? " · Chq " + esc(r.cheque) : ""}</span><b>${sign}${PKR(r.amount)}</b></div>`).join("");
+  const sumOf = a => a.reduce((s, r) => s + r.amount, 0);
+  const editable = brs.status === "draft" || me.is_admin;
+  const lCount = brs.ledger.rows.filter(r => rowStatus("L", r).cls === "st-match").length, bCount = brs.bankSt.rows.filter(r => rowStatus("B", r).cls === "st-match").length;
+  const issues = brs.ledger.issues.map(i => "Ledger: " + i).concat(brs.bankSt.issues.map(i => "Statement: " + i));
+  out.innerHTML = `
+    <div class="pagehead" style="margin:28px 0 14px"><div class="grow"><div class="eyebrow">${esc(brs.bank)}${brs.accountNo ? " · " + esc(brs.accountNo) : ""} · ${esc(BRANCHES[brs.branch] || "")}</div>
+      <h2 style="font-size:20px;margin:2px 0">Bank reconciliation statement as at ${fmtD(brs.periodTo)}</h2>
+      <p class="sub" style="margin:0">Statement ${fmtD(brs.periodFrom)} to ${fmtD(brs.periodTo)} · ${lCount} of ${brs.ledger.rows.length} ledger entries and ${bCount} of ${brs.bankSt.rows.length} bank entries matched${brs.status === "final" ? " · <b>Final</b>" : ""}</p></div>
+      <span class="recon ${ok ? "ok" : "bad"}">${ok ? "✓ Reconciled" : "Difference " + PKR(S.difference)}</span></div>
+    ${issues.length ? `<details class="more issues"><summary>${issues.length} reading note${issues.length > 1 ? "s" : ""} to check ▾</summary><ul>${issues.map(i => `<li>${esc(i)}</li>`).join("")}</ul></details>` : ""}
+    <div class="brs-grid">
+      <div class="panel brs-stmt">
+        <h3>Balance as per bank statement</h3>
+        ${line("Closing balance per " + esc(brs.bank), S.bankClosing, "strong")}
+        ${line("Add: deposits recorded, not yet credited by bank", sumOf(S.depositsInTransit))}${items(S.depositsInTransit, "+ ")}
+        ${line("Less: cheques / payments issued, not yet cleared", -sumOf(S.unpresented))}${items(S.unpresented, "− ")}
+        ${line("Adjusted bank balance", S.adjustedBank, "total")}
+      </div>
+      <div class="panel brs-stmt">
+        <h3>Balance as per ProcessSoft</h3>
+        ${line("Closing balance per ledger", S.ledgerClosing, "strong")}
+        ${line("Add: credits in bank, not in ProcessSoft", sumOf(S.bankCredits))}${items(S.bankCredits, "+ ")}
+        ${line("Less: charges / debits in bank, not in ProcessSoft", -sumOf(S.bankDebits))}${items(S.bankDebits, "− ")}
+        ${line("Adjusted book balance", S.adjustedBooks, "total")}
+      </div>
+    </div>
+    ${(S.bankCredits.length || S.bankDebits.length) ? `<div class="panel" style="margin-top:16px"><h3>Entries to post in ProcessSoft</h3><div class="cap">These appear on the bank statement but not in the ledger, e.g. bank charges, profit, tax or direct deposits.</div>
+      ${S.bankCredits.concat(S.bankDebits).map(r => `<div class="bl item"><span>${fmtD(r.date)} · ${esc(r.narration)}</span><b>${r.dir === "in" ? "Receipt " : "Payment "}${PKR(r.amount)}</b></div>`).join("")}</div>` : ""}
+    <div class="brs-actions">
+      <label class="toggle"><input type="checkbox" id="brsOnlyOpen" ${brsOnlyOpen ? "checked" : ""}> Show unmatched only</label>
+      ${editable ? `<button class="btn ghost small" id="brsMatchSel" ${brsSel.L.size && brsSel.B.size ? "" : "disabled"}>Match selected</button><span class="hint" id="brsSelInfo">${selInfo()}</span>` : ""}
+      <span style="flex:1"></span>
+      ${editable ? `<button class="btn ghost small" data-brssave="draft">Save draft</button><button class="btn small" data-brssave="final">Save as final</button>` : ""}
+      <button class="btn ghost small" id="brsXlsx">Download Excel</button>
+    </div>
+    <div id="brsSaveMsg"></div>
+    <div class="brs-tables">
+      <div><h3 class="tt">ProcessSoft ledger <span class="hint">${brs.ledgerFile ? esc(brs.ledgerFile) : ""}</span></h3>${brsTable("L")}</div>
+      <div><h3 class="tt">Bank statement <span class="hint">${brs.statementFile ? esc(brs.statementFile) : ""}</span></h3>${brsTable("B")}</div>
+    </div>`;
+}
+function selInfo(){
+  const L = brs.ledger.rows.filter(r => brsSel.L.has(r.id)), B = brs.bankSt.rows.filter(r => brsSel.B.has(r.id));
+  if (!L.length && !B.length) return "Tick unmatched entries on both sides to match them by hand.";
+  const net = a => a.reduce((s, r) => s + (r.dir === "in" ? r.amount : -r.amount), 0);
+  const d = Math.round((net(L) - net(B)) * 100) / 100;
+  return `Ledger ${PKR(net(L))} · Bank ${PKR(net(B))}${L.length && B.length ? (Math.abs(d) < 0.5 ? " · amounts agree" : " · differ by " + PKR(d)) : ""}`;
+}
+document.addEventListener("change", e => {
+  const cb = e.target.closest("[data-brsel]");
+  if (cb) { const [side, id] = cb.dataset.brsel.split(":"); cb.checked ? brsSel[side].add(id) : brsSel[side].delete(id); cb.closest("tr").classList.toggle("sel", cb.checked);
+    const btn = $("#brsMatchSel"); if (btn) btn.disabled = !(brsSel.L.size && brsSel.B.size); const si = $("#brsSelInfo"); if (si) si.textContent = selInfo(); return; }
+  if (e.target.id === "brsOnlyOpen") { brsOnlyOpen = e.target.checked; renderBrs(); }
+});
+document.addEventListener("click", async e => {
+  if (e.target.id === "brsMatchSel") {
+    const L = brs.ledger.rows.filter(r => brsSel.L.has(r.id)), B = brs.bankSt.rows.filter(r => brsSel.B.has(r.id));
+    const net = a => a.reduce((s, r) => s + (r.dir === "in" ? r.amount : -r.amount), 0);
+    if (Math.abs(net(L) - net(B)) >= 0.5) { $("#brsSelInfo").innerHTML = `<span style="color:var(--bad)">The selected amounts don't agree (${PKR(net(L) - net(B))} apart). Pick entries that add up to the same total.</span>`; return; }
+    brs.pairs.push({ l: L.map(r => r.id), b: B.map(r => r.id), how: "by hand" });
+    brsSel = { L: new Set(), B: new Set() }; renderBrs(); return;
+  }
+  const um = e.target.closest("[data-unmatch]");
+  if (um) { const [side, id] = um.dataset.unmatch.split(":"); brs.pairs = brs.pairs.filter(p => !p[side.toLowerCase()].includes(id)); renderBrs(); return; }
+  const sv = e.target.closest("[data-brssave]");
+  if (sv) return saveBrs(sv.dataset.brssave, sv);
+  if (e.target.id === "brsXlsx") return brsExcel();
+  const op = e.target.closest("[data-brsopen]");
+  if (op) return openBrs(Number(op.dataset.brsopen));
+  const dl = e.target.closest("[data-brsdel]");
+  if (dl) {
+    if (dl.dataset.confirm !== "1") { dl.dataset.confirm = "1"; dl.textContent = "Click again to delete"; return; }
+    const { error } = await sb.from("brs_reports").delete().eq("id", Number(dl.dataset.brsdel));
+    if (!error) { if (brs && brs.id === Number(dl.dataset.brsdel)) { brs = null; $("#brsOut").hidden = true; } loadBrsList(); }
+  }
+});
+
+async function saveBrs(status, btn){
+  const S = brsSummary();
+  if (status === "final" && Math.abs(S.difference) >= 0.5 && btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "Difference isn't zero. Click again to save as final anyway"; return; }
+  const clearedIds = new Set(brs.pairs.flatMap(p => p.l).concat(brs.reversals.flat()));
+  const payload = {
+    bank: brs.bank, branch: brs.branch || null, account_no: brs.accountNo || null, period_from: brs.periodFrom, period_to: brs.periodTo,
+    ledger_closing: S.ledgerClosing, bank_closing: S.bankClosing, difference: S.difference, status,
+    data: { ledger: brs.ledger, bankSt: brs.bankSt, pairs: brs.pairs, reversals: brs.reversals, earlier: brs.earlier, ledgerFile: brs.ledgerFile, statementFile: brs.statementFile },
+    cleared_keys: brs.ledger.rows.filter(r => clearedIds.has(r.id)).map(ledgerKey),
+  };
+  btn.disabled = true;
+  const q = brs.id ? sb.from("brs_reports").update(payload).eq("id", brs.id).select("id").single() : sb.from("brs_reports").insert(payload).select("id").single();
+  const { data, error } = await q;
+  btn.disabled = false;
+  if (error) return msg($("#brsSaveMsg"),"bad","Couldn't save: " + error.message);
+  brs.id = data.id; brs.status = status;
+  renderBrs(); msg($("#brsSaveMsg"),"ok", status === "final" ? "Saved as final. Entries cleared here won't show as outstanding next month." : "Draft saved.");
+  loadBrsList();
+}
+async function openBrs(id){
+  const { data, error } = await sb.from("brs_reports").select("*").eq("id", id).single();
+  if (error) return;
+  brs = { id: data.id, status: data.status, bank: data.bank, branch: data.branch, accountNo: data.account_no, periodFrom: data.period_from, periodTo: data.period_to,
+          ledger: data.data.ledger, bankSt: data.data.bankSt, pairs: data.data.pairs || [], reversals: data.data.reversals || [], earlier: data.data.earlier || [],
+          ledgerFile: data.data.ledgerFile, statementFile: data.data.statementFile };
+  brsSel = { L: new Set(), B: new Set() };
+  renderBrs(); $("#brsOut").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+async function loadBrsList(){
+  const { data, error } = await sb.from("brs_reports").select("id,bank,branch,account_no,period_from,period_to,ledger_closing,bank_closing,difference,status,created_at,created_by,updated_at").order("period_to", { ascending: false }).limit(100);
+  if (error) return $("#brsList").innerHTML = `<div class="empty">${esc(error.message)}</div>`;
+  $("#brsList").innerHTML = data.length ? `<div class="tablewrap"><table class="brs-t list"><thead><tr><th>Bank</th><th>Period</th><th class="num">Per ProcessSoft</th><th class="num">Per bank</th><th>Result</th><th>Status</th><th></th></tr></thead><tbody>${data.map(r => `<tr>
+      <td><b>${esc(r.bank)}</b><div class="sub2">${esc([r.account_no, r.branch].filter(Boolean).join(" · "))}</div></td>
+      <td class="nowrap">${fmtD(r.period_from)} – ${fmtD(r.period_to)}</td>
+      <td class="num">${Number(r.ledger_closing).toLocaleString("en-PK")}</td><td class="num">${Number(r.bank_closing).toLocaleString("en-PK")}</td>
+      <td>${Math.abs(r.difference) < 0.5 ? `<span class="bst st-match">Reconciled</span>` : `<span class="bst st-open">Off by ${PKR(r.difference)}</span>`}</td>
+      <td>${r.status === "final" ? "Final" : "Draft"}</td>
+      <td class="nowrap"><button class="link" data-brsopen="${r.id}">Open</button>${me.is_admin ? ` · <button class="link" data-brsdel="${r.id}" style="color:var(--bad)">Delete</button>` : ""}</td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="empty">No reconciliations saved yet. Upload a ledger and a statement above to start.</div>`;
+}
+async function brsExcel(){
+  try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"); } catch (err) { return msg($("#brsSaveMsg"),"bad", err.message); }
+  const S = brsSummary(), sumOf = a => a.reduce((s, r) => s + r.amount, 0);
+  const aoa = [
+    ["Ibna Al Aziz — Bank Reconciliation Statement"], [`${brs.bank}${brs.accountNo ? " · " + brs.accountNo : ""} · ${BRANCHES[brs.branch] || ""}`], [`As at ${fmtD(brs.periodTo)} (statement ${fmtD(brs.periodFrom)} to ${fmtD(brs.periodTo)})`], [],
+    ["Closing balance per bank statement", "", S.bankClosing],
+    ["Add: deposits recorded, not yet credited by bank", "", sumOf(S.depositsInTransit)], ...S.depositsInTransit.map(r => ["", `${fmtD(r.date)} · ${r.narration}`, r.amount]),
+    ["Less: cheques / payments issued, not yet cleared", "", -sumOf(S.unpresented)], ...S.unpresented.map(r => ["", `${fmtD(r.date)} · ${r.narration}${r.cheque ? " · Chq " + r.cheque : ""}`, -r.amount]),
+    ["Adjusted bank balance", "", S.adjustedBank], [],
+    ["Closing balance per ProcessSoft ledger", "", S.ledgerClosing],
+    ["Add: credits in bank, not in ProcessSoft", "", sumOf(S.bankCredits)], ...S.bankCredits.map(r => ["", `${fmtD(r.date)} · ${r.narration}`, r.amount]),
+    ["Less: debits in bank, not in ProcessSoft", "", -sumOf(S.bankDebits)], ...S.bankDebits.map(r => ["", `${fmtD(r.date)} · ${r.narration}`, -r.amount]),
+    ["Adjusted book balance", "", S.adjustedBooks], [],
+    ["Difference", "", S.difference],
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(aoa); ws["!cols"] = [{ wch: 48 }, { wch: 70 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, ws, "BRS");
+  const side = (k, rows) => [["Date", k === "L" ? "Voucher" : "Value date", "Description", "Cheque", "In", "Out", "Balance", "Status"]].concat(rows.map(r => [r.date, k === "L" ? [r.type, r.voc].filter(Boolean).join(" ") : (r.valueDate || ""), r.narration, r.cheque || "", r.dir === "in" ? r.amount : "", r.dir === "out" ? r.amount : "", r.balance, rowStatus(k, r).text]));
+  const wl = XLSX.utils.aoa_to_sheet(side("L", brs.ledger.rows)); wl["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 60 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 26 }];
+  const wbk = XLSX.utils.aoa_to_sheet(side("B", brs.bankSt.rows)); wbk["!cols"] = wl["!cols"];
+  XLSX.utils.book_append_sheet(wb, wl, "ProcessSoft ledger"); XLSX.utils.book_append_sheet(wb, wbk, "Bank statement");
+  XLSX.writeFile(wb, `BRS ${brs.bank} ${brs.periodTo}.xlsx`);
+}
+
 </script>
 </body>
 </html>
